@@ -29,7 +29,18 @@ public class ListController {
 
         Slice slice = new Slice();
         slice.setName(name);
+        slice.setActiveHosts(20);
+        slice.setWorking(true);
+        slice.setManagerHostName("swarm-master");
         sliceRepository.save(slice);
+
+        slice = new Slice();
+        slice.setName(name + " - nie działający");
+        slice.setActiveHosts(0);
+        slice.setWorking(false);
+        slice.setManagerHostName("ala_2_" + name);
+        sliceRepository.save(slice);
+
         return "created";
     }
 

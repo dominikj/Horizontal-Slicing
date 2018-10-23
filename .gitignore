@@ -3,3 +3,4 @@
 .idea/
 manager.iml
 target/
+/src/main/resources/pass.properties
