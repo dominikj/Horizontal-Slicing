@@ -1,4 +1,4 @@
-package pl.mgr.hs.manager.service.docker;
+package pl.mgr.hs.docker.util.service;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

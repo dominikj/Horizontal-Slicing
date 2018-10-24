@@ -1,4 +1,4 @@
-package pl.mgr.hs.manager.service.docker.machine;
+package pl.mgr.hs.docker.util.service.machine;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -8,11 +8,9 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import pl.mgr.hs.manager.enums.DockerMachineStatus;
-import pl.mgr.hs.manager.service.docker.DockerMachineEnv;
-import pl.mgr.hs.manager.util.CollectingLogOutputStream;
+import pl.mgr.hs.docker.util.enums.DockerMachineStatus;
+import pl.mgr.hs.docker.util.service.DockerMachineEnv;
+import pl.mgr.hs.docker.util.util.CollectingLogOutputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -24,7 +22,6 @@ import java.util.List;
 /**
  * Created by dominik on 20.10.18.
  */
-@Service
 public class DefaultDockerMachineService implements DockerMachineService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultDockerMachineService.class);
 
@@ -41,7 +38,7 @@ public class DefaultDockerMachineService implements DockerMachineService {
 
     private final String sudoPassword;
 
-    public DefaultDockerMachineService(@Value("${local.sudo.password}") String sudoPassword) {
+    public DefaultDockerMachineService(String sudoPassword) {
         this.sudoPassword = sudoPassword;
     }
 

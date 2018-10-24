@@ -1,6 +1,6 @@
 # Created by .ignore support plugin (hsz.mobi)
 .gitignore
 .idea/
-manager.iml
-target/
-/src/main/resources/pass.properties
+*.iml
+*/target/
+pass.properties

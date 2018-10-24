@@ -1,4 +1,4 @@
-package pl.mgr.hs.manager.service.docker.remote;
+package pl.mgr.hs.docker.util.service.remote;
 
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificates;
@@ -8,8 +8,7 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.swarm.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import pl.mgr.hs.manager.service.docker.DockerMachineEnv;
+import pl.mgr.hs.docker.util.service.DockerMachineEnv;
 
 import java.util.Collections;
 import java.util.List;
@@ -18,7 +17,6 @@ import java.util.stream.Collectors;
 /**
  * Created by dominik on 24.10.18.
  */
-@Service
 public class DefaultDockerIntegrationService implements DockerIntegrationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultDockerIntegrationService.class);
     private static final String WORKER_ROLE = "worker";

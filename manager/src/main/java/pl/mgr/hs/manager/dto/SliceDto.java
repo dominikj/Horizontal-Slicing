@@ -1,7 +1,7 @@
 package pl.mgr.hs.manager.dto;
 
 import lombok.Data;
-import pl.mgr.hs.manager.service.docker.DockerMachineEnv;
+import pl.mgr.hs.docker.util.service.DockerMachineEnv;
 
 /**
  * Created by dominik on 20.10.18.

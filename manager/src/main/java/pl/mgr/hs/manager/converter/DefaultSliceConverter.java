@@ -2,12 +2,13 @@ package pl.mgr.hs.manager.converter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import pl.mgr.hs.docker.util.enums.DockerMachineStatus;
+import pl.mgr.hs.docker.util.service.DockerMachineEnv;
+import pl.mgr.hs.docker.util.service.machine.DockerMachineService;
+import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
 import pl.mgr.hs.manager.dto.SliceDto;
 import pl.mgr.hs.manager.entity.Slice;
-import pl.mgr.hs.manager.enums.DockerMachineStatus;
-import pl.mgr.hs.manager.service.docker.DockerMachineEnv;
-import pl.mgr.hs.manager.service.docker.machine.DockerMachineService;
-import pl.mgr.hs.manager.service.docker.remote.DockerIntegrationService;
+
 
 /**
  * Created by dominik on 20.10.18.

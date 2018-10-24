@@ -1,7 +1,7 @@
-package pl.mgr.hs.manager.service.docker.machine;
+package pl.mgr.hs.docker.util.service.machine;
 
-import pl.mgr.hs.manager.enums.DockerMachineStatus;
-import pl.mgr.hs.manager.service.docker.DockerMachineEnv;
+import pl.mgr.hs.docker.util.enums.DockerMachineStatus;
+import pl.mgr.hs.docker.util.service.DockerMachineEnv;
 
 /**
  * Created by dominik on 20.10.18.

@@ -1,4 +1,4 @@
-package pl.mgr.hs.manager.util;
+package pl.mgr.hs.docker.util.util;
 
 import org.apache.commons.exec.LogOutputStream;
 
