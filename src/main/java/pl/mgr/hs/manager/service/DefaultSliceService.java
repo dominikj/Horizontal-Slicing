@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import pl.mgr.hs.manager.converter.GenericConverter;
 import pl.mgr.hs.manager.dto.SliceDto;
+import pl.mgr.hs.manager.entity.Slice;
 import pl.mgr.hs.manager.repository.SliceRepository;
 
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.List;
 public class DefaultSliceService implements SliceService {
 
     private final SliceRepository sliceRepository;
-    private final GenericConverter sliceConverter;
+    private final GenericConverter<SliceDto, Slice> sliceConverter;
 
     @Autowired
     public DefaultSliceService(SliceRepository sliceRepository,
@@ -28,5 +29,12 @@ public class DefaultSliceService implements SliceService {
     @Override
     public List<SliceDto> getAllSlices() {
         return sliceConverter.createDtos((List) sliceRepository.findAll());
+    }
+
+    @Override
+    public SliceDto getSlice(int id) {
+        return sliceRepository.findById(id)
+                .map(sliceConverter::createDto)
+                .orElseThrow(() -> new IllegalArgumentException("Given slice is not existing"));
     }
 }

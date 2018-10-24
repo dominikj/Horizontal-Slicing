@@ -1,5 +1,6 @@
 package pl.mgr.hs.manager.converter;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pl.mgr.hs.manager.dto.SliceDto;
 import pl.mgr.hs.manager.entity.Slice;
@@ -17,6 +18,7 @@ public class DefaultSliceConverter implements GenericConverter<SliceDto, Slice> 
     private final DockerMachineService dockerMachineService;
     private final DockerIntegrationService dockerIntegrationService;
 
+    @Autowired
     public DefaultSliceConverter(DockerMachineService dockerMachineService,
                                  DockerIntegrationService dockerIntegrationService) {
         this.dockerMachineService = dockerMachineService;

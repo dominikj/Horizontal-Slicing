@@ -10,4 +10,6 @@ import java.util.List;
 public interface SliceService {
 
     List<SliceDto> getAllSlices();
+
+    SliceDto getSlice(int id);
 }
