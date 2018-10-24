@@ -4,7 +4,9 @@ import org.springframework.stereotype.Component;
 import pl.mgr.hs.manager.dto.SliceDto;
 import pl.mgr.hs.manager.entity.Slice;
 import pl.mgr.hs.manager.enums.DockerMachineStatus;
-import pl.mgr.hs.manager.service.docker.DockerMachineService;
+import pl.mgr.hs.manager.service.docker.DockerMachineEnv;
+import pl.mgr.hs.manager.service.docker.machine.DockerMachineService;
+import pl.mgr.hs.manager.service.docker.remote.DockerIntegrationService;
 
 /**
  * Created by dominik on 20.10.18.
@@ -13,9 +15,12 @@ import pl.mgr.hs.manager.service.docker.DockerMachineService;
 public class DefaultSliceConverter implements GenericConverter<SliceDto, Slice> {
 
     private final DockerMachineService dockerMachineService;
+    private final DockerIntegrationService dockerIntegrationService;
 
-    public DefaultSliceConverter(DockerMachineService dockerMachineService) {
+    public DefaultSliceConverter(DockerMachineService dockerMachineService,
+                                 DockerIntegrationService dockerIntegrationService) {
         this.dockerMachineService = dockerMachineService;
+        this.dockerIntegrationService = dockerIntegrationService;
     }
 
     @Override
@@ -26,12 +31,16 @@ public class DefaultSliceConverter implements GenericConverter<SliceDto, Slice> 
     @Override
     public SliceDto createDto(Slice entity) {
         SliceDto dto = new SliceDto();
-        dto.setActiveHosts(entity.getActiveHosts());
         dto.setId(entity.getId());
         dto.setManagerHostName(entity.getManagerHostName());
         dto.setName(entity.getName());
         DockerMachineStatus machineStatus = dockerMachineService.getMachineStatus(entity.getManagerHostName());
         dto.setWorking(machineStatus.equals(DockerMachineStatus.Running));
+
+        if (dto.isWorking()) {
+            DockerMachineEnv machineEnv = dockerMachineService.getMachineEnv(entity.getManagerHostName());
+            dto.setActiveHosts(dockerIntegrationService.getConnectedHosts(machineEnv).size());
+        }
         return dto;
     }
 

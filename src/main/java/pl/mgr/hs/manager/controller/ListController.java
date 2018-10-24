@@ -1,5 +1,13 @@
 package pl.mgr.hs.manager.controller;
 
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerCertificates;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.Info;
+import com.spotify.docker.client.messages.swarm.Node;
+import com.spotify.docker.client.messages.swarm.Swarm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,6 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import pl.mgr.hs.manager.entity.Slice;
 import pl.mgr.hs.manager.repository.SliceRepository;
+
+import java.net.URI;
+import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * Created by dominik on 19.10.18.
@@ -29,15 +41,11 @@ public class ListController {
 
         Slice slice = new Slice();
         slice.setName(name);
-        slice.setActiveHosts(20);
-        slice.setWorking(true);
         slice.setManagerHostName("swarm-master");
         sliceRepository.save(slice);
 
         slice = new Slice();
         slice.setName(name + " - nie działający");
-        slice.setActiveHosts(0);
-        slice.setWorking(false);
         slice.setManagerHostName("ala_2_" + name);
         sliceRepository.save(slice);
 
@@ -48,5 +56,16 @@ public class ListController {
     @ResponseBody
     public Iterable<Slice> getSlices() {
         return sliceRepository.findAll();
+    }
+
+    @GetMapping("/test-docker-api")
+    @ResponseBody
+    public List<Node> test() throws DockerCertificateException, DockerException, InterruptedException {
+        final DockerClient docker = DefaultDockerClient.builder()
+                .uri(URI.create("https://192.168.99.100:2376"))
+                .dockerCertificates(new DockerCertificates(Paths.get("/root/.docker/machine/machines/swarm-master")))
+                .build();
+        List<Node> worker = docker.listNodes(Node.Criteria.builder().nodeRole("worker").build());
+       return worker;
     }
 }

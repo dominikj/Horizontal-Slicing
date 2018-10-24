@@ -16,7 +16,5 @@ public class Slice {
     @GeneratedValue
     private Integer id;
     private String name;
-    private Boolean working;
-    private int activeHosts;
     private String managerHostName;
 }

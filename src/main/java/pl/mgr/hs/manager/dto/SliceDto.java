@@ -1,6 +1,7 @@
 package pl.mgr.hs.manager.dto;
 
 import lombok.Data;
+import pl.mgr.hs.manager.service.docker.DockerMachineEnv;
 
 /**
  * Created by dominik on 20.10.18.
@@ -9,7 +10,8 @@ import lombok.Data;
 public class SliceDto {
     private Integer id;
     private String name;
-    private Boolean working;
+    private boolean working;
     private int activeHosts;
     private String managerHostName;
+    private DockerMachineEnv machineEnv;
 }
