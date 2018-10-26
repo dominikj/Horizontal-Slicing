@@ -4,23 +4,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import pl.mgr.hs.manager.service.SliceService;
 
-/** Created by dominik on 19.10.18. */
+/** Created by dominik on 24.10.18. */
 @Controller
-public class DashboardController {
+public class DetailsController {
 
   private final SliceService sliceService;
 
   @Autowired
-  public DashboardController(SliceService sliceService) {
+  public DetailsController(SliceService sliceService) {
     this.sliceService = sliceService;
   }
 
-  @GetMapping("/")
-  public String showMainPage(Model model) {
-    model.addAttribute("slices", sliceService.getAllSlices());
+  @GetMapping("/details/{sliceId}")
+  String getSliceDetails(@PathVariable("sliceId") int id, Model model) {
+    model.addAttribute("slice", sliceService.getSlice(id));
 
-    return "pages/index";
+    return "pages/details";
   }
 }

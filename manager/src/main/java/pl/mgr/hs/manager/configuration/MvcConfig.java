@@ -15,21 +15,22 @@ import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
 @PropertySource("classpath:pass.properties")
 public class MvcConfig implements WebMvcConfigurer {
 
-    @Bean
-    public InternalResourceViewResolver viewResolver() {
-        InternalResourceViewResolver resolver = new InternalResourceViewResolver();
-        resolver.setPrefix("/");
-        resolver.setSuffix(".jsp");
-        return resolver;
-    }
+  @Bean
+  public InternalResourceViewResolver viewResolver() {
+    InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+    resolver.setPrefix("/");
+    resolver.setSuffix(".jsp");
+    return resolver;
+  }
 
-    @Bean
-    public DockerMachineService dockerMachineService(@Value("${local.sudo.password}") String sudoPassword) {
-        return new DefaultDockerMachineService(sudoPassword);
-    }
+  @Bean
+  public DockerMachineService dockerMachineService(
+      @Value("${local.sudo.password}") String sudoPassword) {
+    return new DefaultDockerMachineService(sudoPassword);
+  }
 
-    @Bean
-    public DockerIntegrationService dockerIntegrationService() {
-        return new DefaultDockerIntegrationService();
-    }
+  @Bean
+  public DockerIntegrationService dockerIntegrationService() {
+    return new DefaultDockerIntegrationService();
+  }
 }

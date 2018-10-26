@@ -5,9 +5,8 @@ import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.Info;
 import com.spotify.docker.client.messages.swarm.Node;
-import com.spotify.docker.client.messages.swarm.Swarm;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,51 +20,54 @@ import java.net.URI;
 import java.nio.file.Paths;
 import java.util.List;
 
-/**
- * Created by dominik on 19.10.18.
- */
+/** Created by dominik on 19.10.18. */
 @Controller
 @RequestMapping("/test")
+@SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
 public class ListController {
 
-    private final SliceRepository sliceRepository;
+  private static final String CERT_PATH_TEST = "/root/.docker/machine/machines/swarm-master";
+  private final SliceRepository sliceRepository;
 
-    @Autowired
-    public ListController(SliceRepository sliceRepository) {
-        this.sliceRepository = sliceRepository;
-    }
+  @Autowired
+  public ListController(SliceRepository sliceRepository) {
+    this.sliceRepository = sliceRepository;
+  }
 
-    @GetMapping("/create")
-    @ResponseBody
-    public String create(@RequestParam String name) {
+  @GetMapping("/create")
+  @ResponseBody
+  public String create(@RequestParam String name) {
 
-        Slice slice = new Slice();
-        slice.setName(name);
-        slice.setManagerHostName("swarm-master");
-        sliceRepository.save(slice);
+    Slice slice = new Slice();
+    slice.setName(name);
+    slice.setManagerHostName("swarm-master");
+    sliceRepository.save(slice);
 
-        slice = new Slice();
-        slice.setName(name + " - nie działający");
-        slice.setManagerHostName("ala_2_" + name);
-        sliceRepository.save(slice);
+    slice = new Slice();
+    slice.setName(name + " - nie działający");
+    slice.setManagerHostName("ala_2_" + name);
+    sliceRepository.save(slice);
 
-        return "created";
-    }
+    return "created";
+  }
 
-    @GetMapping("/get-all")
-    @ResponseBody
-    public Iterable<Slice> getSlices() {
-        return sliceRepository.findAll();
-    }
+  @GetMapping("/get-all")
+  @ResponseBody
+  public Iterable<Slice> getSlices() {
+    return sliceRepository.findAll();
+  }
 
-    @GetMapping("/test-docker-api")
-    @ResponseBody
-    public List<Node> test() throws DockerCertificateException, DockerException, InterruptedException {
-        final DockerClient docker = DefaultDockerClient.builder()
-                .uri(URI.create("https://192.168.99.100:2376"))
-                .dockerCertificates(new DockerCertificates(Paths.get("/root/.docker/machine/machines/swarm-master")))
-                .build();
-        List<Node> worker = docker.listNodes(Node.Criteria.builder().nodeRole("worker").build());
-       return worker;
-    }
+  @GetMapping("/test-docker-api")
+  @ResponseBody
+  public List<Node> test()
+      throws DockerCertificateException, DockerException, InterruptedException {
+    final DockerClient docker =
+        DefaultDockerClient.builder()
+            .uri(URI.create("https://192.168.99.100:2376"))
+            .dockerCertificates(
+                new DockerCertificates(Paths.get(CERT_PATH_TEST)))
+            .build();
+    List<Node> worker = docker.listNodes(Node.Criteria.builder().nodeRole("worker").build());
+    return worker;
+  }
 }

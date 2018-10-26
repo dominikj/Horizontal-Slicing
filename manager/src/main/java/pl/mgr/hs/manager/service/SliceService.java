@@ -1,15 +1,15 @@
 package pl.mgr.hs.manager.service;
 
-import pl.mgr.hs.manager.dto.SliceDto;
+import pl.mgr.hs.manager.dto.details.SliceDetailsDto;
 
-import java.util.List;
-
-/**
- * Created by dominik on 20.10.18.
- */
+/** Created by dominik on 20.10.18. */
 public interface SliceService {
 
-    List<SliceDto> getAllSlices();
+  Iterable getAllSlices();
 
-    SliceDto getSlice(int id);
+  SliceDetailsDto getSlice(int id);
+
+  void removeSlice(int id);
+
+  void restartSlice(int id);
 }
