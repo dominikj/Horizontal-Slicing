@@ -13,4 +13,12 @@ public interface DockerMachineService {
   void removeMachine(String name);
 
   void restartMachine(String name);
+
+  void regenerateCertsForMachine(String name);
+
+  void createNewMachine(String name);
+
+  void stopMachine(String name);
+
+  String getExternalIpAddress(String name);
 }

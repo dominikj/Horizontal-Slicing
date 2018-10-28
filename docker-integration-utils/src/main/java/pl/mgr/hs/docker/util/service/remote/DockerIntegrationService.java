@@ -23,4 +23,18 @@ public interface DockerIntegrationService {
   List<Container> getContainers(DockerMachineEnv machineEnv, boolean onlyRunningContainers);
 
   void removeNodesFromSwarm(DockerMachineEnv machineEnv, List<String> nodeIds);
+
+  void leaveSwarm(DockerMachineEnv machineEnv);
+
+  void initSwarm(DockerMachineEnv machineEnv);
+
+  void initSwarm(DockerMachineEnv machineEnv, String advertiseAddress);
+
+  void createSliceService(DockerMachineEnv machineEnv, String imageId, Integer port);
+
+  void removeServerContainer(DockerMachineEnv machineEnv);
+
+  void restartServerContainer(DockerMachineEnv machineEnv);
+
+  void createServerContainer(DockerMachineEnv machineEnv, String imageId, Integer publishedPort);
 }

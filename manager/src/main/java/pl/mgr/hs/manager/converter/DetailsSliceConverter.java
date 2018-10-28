@@ -18,16 +18,19 @@ import pl.mgr.hs.manager.dto.details.HostDto;
 import pl.mgr.hs.manager.dto.details.SliceDetailsDto;
 import pl.mgr.hs.manager.entity.Slice;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static pl.mgr.hs.docker.util.constant.Constants.SERVER_APP_ID;
 
 /** Created by dominik on 24.10.18. */
 @Component
 public class DetailsSliceConverter implements GenericConverter<SliceDetailsDto, Slice> {
   private static final Logger LOGGER = LoggerFactory.getLogger(DetailsSliceConverter.class);
 
-  private static final String SERVER_APP_CONTAINER_NAME = "\\S+serverApp";
+  private static final String SERVER_APP_CONTAINER_NAME = "\\S+" + SERVER_APP_ID;
   private static final String SHUTDOWN_DESIRED_STATE = "shutdown";
   private final DockerMachineService dockerMachineService;
   private final DockerIntegrationService dockerIntegrationService;
@@ -51,8 +54,8 @@ public class DetailsSliceConverter implements GenericConverter<SliceDetailsDto, 
     dto.setWorking(machineStatus.equals(DockerMachineStatus.Running));
 
     if (!dto.isWorking()) {
-      LOGGER.warn("Slice {} is not working", entity.getName());
-      return dto;
+      LOGGER.warn("Slice {} is not working. I will use static config", entity.getName());
+      return convertFromStaticConfiguration(entity, dto);
     }
 
     DockerMachineEnv machineEnv = dockerMachineService.getMachineEnv(entity.getManagerHostName());
@@ -160,5 +163,21 @@ public class DetailsSliceConverter implements GenericConverter<SliceDetailsDto, 
 
     app.setPublishedPorts(publishedPorts);
     return app;
+  }
+
+  private SliceDetailsDto convertFromStaticConfiguration(Slice slice, SliceDetailsDto dto) {
+    ApplicationDto serverApplication = new ApplicationDto();
+    serverApplication.setImage(slice.getServerApplication().getImage());
+    serverApplication.setPublishedPorts(
+        Collections.singletonList(slice.getServerApplication().getPublishedPort()));
+
+    ApplicationDto clientApplication = new ApplicationDto();
+    clientApplication.setImage(slice.getClientApplication().getImage());
+    clientApplication.setPublishedPorts(
+        Collections.singletonList(slice.getClientApplication().getPublishedPort()));
+
+    dto.setServerApplication(serverApplication);
+    dto.setClientApplication(clientApplication);
+    return dto;
   }
 }

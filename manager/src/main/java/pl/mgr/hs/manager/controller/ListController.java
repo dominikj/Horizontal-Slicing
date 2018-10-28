@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import pl.mgr.hs.manager.entity.Application;
 import pl.mgr.hs.manager.entity.Slice;
 import pl.mgr.hs.manager.repository.SliceRepository;
 
@@ -41,11 +42,22 @@ public class ListController {
     Slice slice = new Slice();
     slice.setName(name);
     slice.setManagerHostName("swarm-master");
+    Application servApp = new Application();
+    servApp.setImage("nginx");
+    servApp.setPublishedPort(80);
+
+    Application cliApp = new Application();
+    cliApp.setImage("nginx");
+    cliApp.setPublishedPort(8080);
+    slice.setServerApplication(servApp);
+    slice.setClientApplication(cliApp);
     sliceRepository.save(slice);
 
     slice = new Slice();
     slice.setName(name + " - nie działający");
     slice.setManagerHostName("ala_2_" + name);
+    slice.setServerApplication(servApp);
+    slice.setClientApplication(cliApp);
     sliceRepository.save(slice);
 
     return "created";
@@ -64,8 +76,7 @@ public class ListController {
     final DockerClient docker =
         DefaultDockerClient.builder()
             .uri(URI.create("https://192.168.99.100:2376"))
-            .dockerCertificates(
-                new DockerCertificates(Paths.get(CERT_PATH_TEST)))
+            .dockerCertificates(new DockerCertificates(Paths.get(CERT_PATH_TEST)))
             .build();
     List<Node> worker = docker.listNodes(Node.Criteria.builder().nodeRole("worker").build());
     return worker;

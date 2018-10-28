@@ -29,7 +29,7 @@ public class ActionsController {
 
   @GetMapping("/restart")
   public RedirectView restartSlice(@RequestParam Integer sliceId) {
-    sliceService.removeSlice(sliceId);
+    sliceService.restartSlice(sliceId);
 
     return new RedirectView("/");
   }

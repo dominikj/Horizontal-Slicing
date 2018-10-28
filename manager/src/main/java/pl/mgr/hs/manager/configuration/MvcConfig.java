@@ -10,6 +10,8 @@ import pl.mgr.hs.docker.util.service.machine.DefaultDockerMachineService;
 import pl.mgr.hs.docker.util.service.machine.DockerMachineService;
 import pl.mgr.hs.docker.util.service.remote.DefaultDockerIntegrationService;
 import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
+import pl.mgr.hs.docker.util.service.virtualbox.DefaultVirtualboxService;
+import pl.mgr.hs.docker.util.service.virtualbox.VirtualboxService;
 
 @Configuration
 @PropertySource("classpath:pass.properties")
@@ -32,5 +34,10 @@ public class MvcConfig implements WebMvcConfigurer {
   @Bean
   public DockerIntegrationService dockerIntegrationService() {
     return new DefaultDockerIntegrationService();
+  }
+
+  @Bean
+  public VirtualboxService virtualboxService() {
+    return new DefaultVirtualboxService();
   }
 }
