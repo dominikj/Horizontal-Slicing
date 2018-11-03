@@ -11,7 +11,8 @@ public class SliceDetailsDto {
   private String name;
   private boolean working;
   private String managerHostName;
-  private String managerHostAddress;
+  private String managerHostAddressInternal;
+  private String managerHostAddressExternal;
   private String serviceName;
 
   private ApplicationDto clientApplication;

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.view.RedirectView;
 import pl.mgr.hs.manager.form.NewSliceForm;
 import pl.mgr.hs.manager.service.SliceService;
 
@@ -29,8 +30,10 @@ public class NewSliceController {
   }
 
   @PostMapping
-  public String saveSlice(@ModelAttribute("slice") NewSliceForm sliceForm) {
-    sliceService.createSlice(sliceForm);
-    return "index";
+  public RedirectView saveSlice(@ModelAttribute("slice") NewSliceForm sliceForm) {
+
+    Integer sliceId = sliceService.createSlice(sliceForm);
+
+    return new RedirectView("/details/" + sliceId);
   }
 }

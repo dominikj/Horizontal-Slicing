@@ -9,4 +9,5 @@ public class SliceListDto {
   private String name;
   private boolean working;
   private long activeHosts;
+  private String ipAddress;
 }

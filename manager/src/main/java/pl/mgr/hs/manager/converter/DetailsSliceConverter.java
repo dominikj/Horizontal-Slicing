@@ -68,7 +68,9 @@ public class DetailsSliceConverter implements GenericConverter<SliceDetailsDto, 
             .collect(Collectors.toList());
     dto.setHosts(hosts);
 
-    dto.setManagerHostAddress(machineEnv.getAddress().getHost());
+    dto.setManagerHostAddressInternal(machineEnv.getAddress().getHost());
+    dto.setManagerHostAddressExternal(
+        dockerMachineService.getExternalIpAddress(entity.getManagerHostName()));
     dto.setJoinToken(getJoinToken(machineEnv));
     dto.setClientApplication(getClientApplication(machineEnv));
     dto.setServerApplication(getServerApplication(machineEnv));

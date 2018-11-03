@@ -14,14 +14,14 @@ import java.util.List;
 
 /** Created by dominik on 20.10.18. */
 @Component
-public class DashboardSliceConverter implements GenericConverter<SliceListDto, Slice> {
+public class SliceListConverter implements GenericConverter<SliceListDto, Slice> {
 
   private static final String READY_STATUS = "ready";
   private final DockerMachineService dockerMachineService;
   private final DockerIntegrationService dockerIntegrationService;
 
   @Autowired
-  public DashboardSliceConverter(
+  public SliceListConverter(
       DockerMachineService dockerMachineService,
       DockerIntegrationService dockerIntegrationService) {
     this.dockerMachineService = dockerMachineService;
@@ -33,19 +33,22 @@ public class DashboardSliceConverter implements GenericConverter<SliceListDto, S
     SliceListDto dto = new SliceListDto();
     dto.setId(entity.getId());
     dto.setName(entity.getName());
+
     DockerMachineStatus machineStatus =
         dockerMachineService.getMachineStatus(entity.getManagerHostName());
     dto.setWorking(machineStatus.equals(DockerMachineStatus.Running));
 
     if (dto.isWorking()) {
-      dto.setActiveHosts(getNumberOfActiveHosts(entity.getManagerHostName()));
+      DockerMachineEnv machineEnv = dockerMachineService.getMachineEnv(entity.getManagerHostName());
+
+      dto.setActiveHosts(getNumberOfActiveHosts(machineEnv));
+      dto.setIpAddress(dockerMachineService.getExternalIpAddress(entity.getManagerHostName()));
     }
 
     return dto;
   }
 
-  private long getNumberOfActiveHosts(String managerName) {
-    DockerMachineEnv machineEnv = dockerMachineService.getMachineEnv(managerName);
+  private long getNumberOfActiveHosts(DockerMachineEnv machineEnv) {
     List<Node> connectedHosts = dockerIntegrationService.getNodes(machineEnv);
     return connectedHosts
         .stream()

@@ -39,7 +39,7 @@ public class DefaultSliceService implements SliceService {
   @Autowired
   public DefaultSliceService(
       SliceRepository sliceRepository,
-      @Qualifier("dashboardSliceConverter")
+      @Qualifier("sliceListConverter")
           GenericConverter<SliceListDto, Slice> sliceListConverter,
       @Qualifier("detailsSliceConverter")
           GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter,
@@ -125,13 +125,29 @@ public class DefaultSliceService implements SliceService {
 
       dockerIntegrationService.createSliceService(
           machineEnvironment.get(),
-          sliceForm.getServerAppImageId(),
-          sliceForm.getServerAppPublishedPort());
+          sliceForm.getClientAppImageId(),
+          sliceForm.getClientAppPublishedPort());
 
       dockerIntegrationService.createServerContainer(
           machineEnvironment.get(),
-          sliceForm.getClientAppImageId(),
-          sliceForm.getClientAppPublishedPort());
+          sliceForm.getServerAppImageId(),
+          sliceForm.getServerAppPublishedPort());
+
+      Slice slice = new Slice();
+      slice.setManagerHostName(machineName);
+      slice.setName(sliceForm.getName());
+
+      Application serverApp = new Application();
+      serverApp.setImage(sliceForm.getServerAppImageId());
+      serverApp.setPublishedPort(sliceForm.getServerAppPublishedPort());
+      slice.setServerApplication(serverApp);
+
+      Application clientApp = new Application();
+      clientApp.setImage(sliceForm.getClientAppImageId());
+      clientApp.setPublishedPort(sliceForm.getClientAppPublishedPort());
+      slice.setClientApplication(clientApp);
+
+      return sliceRepository.save(slice).getId();
     }
     return 0;
   }

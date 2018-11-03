@@ -126,7 +126,7 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   @Override
   public void initSwarm(DockerMachineEnv machineEnv, String advertiseAddress) {
     try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
-      LOGGER.info("Initing swarm with advertise address: {}....", advertiseAddress);
+      LOGGER.info("Initializing swarm with advertise address: {}....", advertiseAddress);
       docker.initSwarm(
           SwarmInit.builder().advertiseAddr(advertiseAddress).listenAddr(advertiseAddress).build());
 

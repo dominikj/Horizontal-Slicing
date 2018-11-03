@@ -95,7 +95,9 @@
                                             <dt>Manager host name</dt>
                                             <dd>${slice.managerHostName}</dd>
                                             <dt>Manager host address</dt>
-                                            <dd>${slice.managerHostAddress}</dd>
+                                            <dd>${slice.managerHostAddressInternal} (internal) <br/>
+                                                ${slice.managerHostAddressExternal} (external)
+                                            </dd>
                                             <dt>Join token</dt>
                                             <dd>${slice.joinToken}</dd>
                                         </dl>
