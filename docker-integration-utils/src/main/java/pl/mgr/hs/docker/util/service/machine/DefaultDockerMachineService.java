@@ -37,8 +37,7 @@ public class DefaultDockerMachineService extends CliExecutorService
   private static final String SUCCESSFULLY_REMOVED_MSG = "Successfully removed \\S+";
   private static final String SUCCESSFULLY_RESTARTED_MSG = "^Restarted machines .+";
   private static final String SUCCESSFULLY_STOPPED_MSG = ".+ was stopped.$";
-  private static final int SUCCESS_REMOVE_MACHINE_OUTPUT_SIZE = 2;
-  private static final int SUCCESS_RESTART_MACHINE_OUTPUT_SIZE = 10;
+  private static final int SUCCESS_REMOVE_MACHINE_OUTPUT_SIZE = 3;
   private static final int SUCCESS_REGENERATE_CERTS_OUTPUT_SIZE = 6;
   private static final String DOCKER_IS_UP_AND_RUNNING_MSG = "Docker is up and running!";
   private static final int SUCCESS_STOP_MACHINE_OUTPUT_SIZE = 2;
@@ -192,7 +191,7 @@ public class DefaultDockerMachineService extends CliExecutorService
     LOGGER.info(String.join("\n", commandOutput));
 
     if (commandOutput.size() == SUCCESS_REMOVE_MACHINE_OUTPUT_SIZE
-        && commandOutput.get(1).matches(SUCCESSFULLY_REMOVED_MSG)) {
+        && commandOutput.get(2).matches(SUCCESSFULLY_REMOVED_MSG)) {
       return new Result<>(null, false);
     }
     return new Result<>(null, true);
@@ -201,8 +200,7 @@ public class DefaultDockerMachineService extends CliExecutorService
   private Result createResultForRestartMachine(List<String> commandOutput) {
     LOGGER.info(String.join("\n", commandOutput));
 
-    if (commandOutput.size() == SUCCESS_RESTART_MACHINE_OUTPUT_SIZE
-        && commandOutput.get(9).matches(SUCCESSFULLY_RESTARTED_MSG)) {
+    if (commandOutput.stream().anyMatch(line -> line.matches(SUCCESSFULLY_RESTARTED_MSG))) {
       return new Result<>(null, false);
     }
     return new Result<>(null, true);

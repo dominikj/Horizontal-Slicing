@@ -2,8 +2,6 @@ package pl.mgr.hs.manager.service;
 
 import com.google.common.collect.Lists;
 import com.spotify.docker.client.messages.swarm.Node;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -27,7 +25,6 @@ import java.util.stream.Collectors;
 /** Created by dominik on 20.10.18. */
 @Service
 public class DefaultSliceService implements SliceService {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSliceService.class);
   private static final String MASTER_POSTFIX = "-master";
   private final SliceRepository sliceRepository;
   private final GenericConverter<SliceListDto, Slice> sliceListConverter;
@@ -39,8 +36,7 @@ public class DefaultSliceService implements SliceService {
   @Autowired
   public DefaultSliceService(
       SliceRepository sliceRepository,
-      @Qualifier("sliceListConverter")
-          GenericConverter<SliceListDto, Slice> sliceListConverter,
+      @Qualifier("sliceListConverter") GenericConverter<SliceListDto, Slice> sliceListConverter,
       @Qualifier("detailsSliceConverter")
           GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter,
       DockerIntegrationService dockerIntegrationService,
@@ -69,16 +65,53 @@ public class DefaultSliceService implements SliceService {
   }
 
   @Override
+  public void stopSlice(int id) {
+    Slice sliceToStop =
+        sliceRepository
+            .findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Given slice is not existing"));
+
+    Optional<DockerMachineEnv> machineEnv = getMachineEnvironment(sliceToStop.getManagerHostName());
+
+    if (machineEnv.isPresent()) {
+      removeNodesInternal(machineEnv.get());
+      dockerMachineService.stopMachine(sliceToStop.getManagerHostName());
+    }
+  }
+
+  @Override
+  public void startSlice(int id) {
+    Slice sliceToStart =
+        sliceRepository
+            .findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Given slice is not existing"));
+
+    dockerMachineService.restartMachine(sliceToStart.getManagerHostName());
+    dockerMachineService.regenerateCertsForMachine(sliceToStart.getManagerHostName());
+    Optional<DockerMachineEnv> machineEnv =
+        getMachineEnvironment(sliceToStart.getManagerHostName());
+
+    if (machineEnv.isPresent()) {
+      dockerIntegrationService.leaveSwarm(machineEnv.get());
+      dockerIntegrationService.initSwarm(machineEnv.get());
+
+      Application clientApplication = sliceToStart.getClientApplication();
+      dockerIntegrationService.createSliceService(
+          machineEnv.get(), clientApplication.getImage(), clientApplication.getPublishedPort());
+
+      dockerIntegrationService.restartServerContainer(machineEnv.get());
+    } else {
+      dockerMachineService.stopMachine(sliceToStart.getManagerHostName());
+      throw new RuntimeException("Cannot start slice");
+    }
+  }
+
+  @Override
   public void removeSlice(int id) {
     Slice sliceToRemove =
         sliceRepository
             .findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Given slice is not existing"));
-
-    Optional<DockerMachineEnv> machineEnv =
-        getMachineEnvironment(sliceToRemove.getManagerHostName());
-
-    machineEnv.ifPresent(this::removeNodesInternal);
 
     dockerMachineService.removeMachine(sliceToRemove.getManagerHostName());
     sliceRepository.delete(sliceToRemove);
@@ -109,14 +142,19 @@ public class DefaultSliceService implements SliceService {
   }
 
   @Override
-  public Integer createSlice(NewSliceForm sliceForm) {
+  public Integer createSlice(NewSliceForm sliceForm, boolean isNew) {
 
     String machineName = sliceForm.getName().replaceAll("\\s+", "-") + MASTER_POSTFIX;
+
+    if (!isNew) {
+      removeSlice(sliceForm.getId());
+    }
 
     dockerMachineService.createNewMachine(machineName);
     dockerMachineService.stopMachine(machineName);
     virtualboxService.createBridgedAdapterForMachine(machineName);
     dockerMachineService.restartMachine(machineName);
+
     String externalIpAddress = dockerMachineService.getExternalIpAddress(machineName);
 
     Optional<DockerMachineEnv> machineEnvironment = getMachineEnvironment(machineName);
@@ -149,7 +187,8 @@ public class DefaultSliceService implements SliceService {
 
       return sliceRepository.save(slice).getId();
     }
-    return 0;
+
+    throw new RuntimeException("Cannot create slice");
   }
 
   private Optional<DockerMachineEnv> getMachineEnvironment(String hostName) {

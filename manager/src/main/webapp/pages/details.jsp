@@ -210,6 +210,23 @@
                                             <spring:param name="sliceId" value="${slice.id}"/>
                                         </spring:url>
                                         <a href="${removeUrl}" class="btn btn-danger">Remove</a>
+
+                                        <c:choose>
+                                            <c:when test="${not slice.working}">
+                                                <spring:url value="/actions/start" var="startUrl">
+                                                    <spring:param name="sliceId" value="${slice.id}"/>
+                                                </spring:url>
+                                                <a href="${startUrl}" class="btn btn-success">Start</a>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <spring:url value="/actions/stop" var="stopUrl">
+                                                    <spring:param name="sliceId" value="${slice.id}"/>
+                                                </spring:url>
+                                                <a href="${stopUrl}" class="btn btn-danger">Stop</a>
+                                            </c:otherwise>
+                                        </c:choose>
+
+                                        <a href="/edit/${slice.id}" class="btn btn-info">Edit</a>
                                     </div>
                                 </div>
                             </div>

@@ -1,3 +1,5 @@
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+
 <div class="navbar-default sidebar" role="navigation">
     <div class="sidebar-nav navbar-collapse">
         <ul class="nav" id="side-menu">
@@ -22,7 +24,10 @@
                         <a href="/list">List</a>
                     </li>
                     <li>
-                        <a href="/new">New</a>
+                        <spring:url value="/new" var="newUrl">
+                            <spring:param name="isNew" value="true"/>
+                        </spring:url>
+                        <a href="${newUrl}">New</a>
                     </li>
                 </ul>
                 <!-- /.nav-second-level -->

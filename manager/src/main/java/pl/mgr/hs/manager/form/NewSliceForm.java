@@ -10,19 +10,21 @@ import javax.validation.constraints.NotNull;
 @Data
 public class NewSliceForm {
   @NotBlank(message = "Name cannot be blank")
-  String name;
+  private String name;
 
   @NotBlank(message = "Client application image id cannot be blank")
-  String clientAppImageId;
+  private String clientAppImageId;
 
   @NotNull(message = "Port cannot be empty")
   @Min(value = 1, message = "Port cannot be smaller than 1")
-  Integer clientAppPublishedPort;
+  private Integer clientAppPublishedPort;
 
   @NotBlank(message = "Server application image id cannot be blank")
-  String serverAppImageId;
+  private String serverAppImageId;
 
   @NotNull(message = "Port cannot be empty")
   @Min(value = 1, message = "Port cannot be smaller than 1")
-  Integer serverAppPublishedPort;
+  private Integer serverAppPublishedPort;
+
+  private int id;
 }

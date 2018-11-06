@@ -29,7 +29,7 @@ public class DefaultVirtualboxService extends CliExecutorService implements Virt
 
   private Result createResultForSetBridgedAdapter(List<String> commandOutput) {
     if (commandOutput.isEmpty()) {
-      LOGGER.error(String.join("\n", commandOutput));
+      LOGGER.info(String.join("\n", commandOutput));
       return new Result<>(null, false);
     }
     return new Result<>(null, true);

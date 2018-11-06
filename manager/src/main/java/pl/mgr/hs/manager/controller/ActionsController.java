@@ -24,13 +24,27 @@ public class ActionsController {
   public RedirectView removeSlice(@RequestParam Integer sliceId) {
     sliceService.removeSlice(sliceId);
 
-    return new RedirectView("/");
+    return new RedirectView(DashboardController.DASHBOARD_URL);
   }
 
   @GetMapping("/restart")
   public RedirectView restartSlice(@RequestParam Integer sliceId) {
     sliceService.restartSlice(sliceId);
 
-    return new RedirectView("/");
+    return new RedirectView(DetailsController.DETAILS_URL + "/" + sliceId);
+  }
+
+  @GetMapping("/stop")
+  public RedirectView stopSlice(@RequestParam Integer sliceId) {
+    sliceService.stopSlice(sliceId);
+
+    return new RedirectView(DetailsController.DETAILS_URL + "/" + sliceId);
+  }
+
+  @GetMapping("/start")
+  public RedirectView startSlice(@RequestParam Integer sliceId) {
+    sliceService.startSlice(sliceId);
+
+    return new RedirectView(DetailsController.DETAILS_URL + "/" + sliceId);
   }
 }

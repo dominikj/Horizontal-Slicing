@@ -6,7 +6,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand" href="/">Slice manager v0.1-demo</a>
+        <a class="navbar-brand" href="/">${appName} ${appVersion} </a>
     </div>
     <!-- /.navbar-header -->
 

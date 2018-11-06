@@ -14,5 +14,9 @@ public interface SliceService {
 
   void restartSlice(int id);
 
-  Integer createSlice(NewSliceForm sliceForm);
+  void stopSlice(int id);
+
+  void startSlice(int id);
+
+  Integer createSlice(NewSliceForm sliceForm, boolean isNew);
 }

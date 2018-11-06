@@ -13,7 +13,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>SB Admin 2 - Bootstrap Admin Theme</title>
+    <title>List</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -78,9 +78,8 @@
                                         <td class="center">${slice.activeHosts}</td>
                                         <td class="center">
                                             <c:if test="${slice.working}">
-                                                <button type="button" class="btn btn-default">
-                                                    <a href="/details/${slice.id}">Details</a>
-                                                </button>
+                                                <a href="/details/${slice.id}" class="btn btn-default">Details</a>
+                                                <a href="/edit/${slice.id}" class="btn btn-default">Edit</a>
                                             </c:if>
                                         </td>
                                     </tr>

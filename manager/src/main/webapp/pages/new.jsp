@@ -1,5 +1,9 @@
 <%@ taglib prefix="navigation" tagdir="/WEB-INF/tags/navigation" %>
+<%@ taglib prefix="inputs" tagdir="/WEB-INF/tags/inputs" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="sprig" uri="http://www.springframework.org/tags" %>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,7 +16,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>SB Admin 2 - Bootstrap Admin Theme</title>
+    <title>New/edit</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -44,7 +48,14 @@
     <div id="page-wrapper">
         <div class="row">
             <div class="col-lg-12">
-                <h1 class="page-header">New</h1>
+                <c:choose>
+                    <c:when test="${isNew}">
+                        <h1 class="page-header">New</h1>
+                    </c:when>
+                    <c:otherwise>
+                        <h1 class="page-header">Edit</h1>
+                    </c:otherwise>
+                </c:choose>
             </div>
             <!-- /.col-lg-12 -->
         </div>
@@ -53,28 +64,35 @@
             <div class="col-lg-12">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        Create a new slice
+                        <c:choose>
+                            <c:when test="${isNew}">
+                                Create a new slice
+                            </c:when>
+                            <c:otherwise>
+                                Edit an existing slice
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                     <div class="panel-body">
                         <div class="row">
                             <div class="col-lg-8">
-                                <form:form role="form" method="POST" modelAttribute="slice" action="/new">
+                                <sprig:url value="/save" var="saveUrl">
+                                    <c:if test="${isNew ne null}">
+                                        <spring:param name="isNew" value="${isNew}"/>
+                                    </c:if>
+                                </sprig:url>
+                                <form:form role="form" method="POST" modelAttribute="slice" action="${saveUrl}">
                                 <div class="form-group">
                                     <div class="panel">
-                                        <form:label path="name">Slice name</form:label>
-                                        <form:input path="name" class="form-control"/>
+                                        <inputs:text readonly="${not isNew}" label="Slice name" bindPath="name"/>
                                     </div>
                                     <div class="panel panel-info">
                                         <div class="panel-heading">
                                             Client Application
                                         </div>
                                         <div class="panel-body">
-                                            <form:label path="clientAppImageId">Docker image</form:label>
-                                            <form:input path="clientAppImageId" class="form-control"/>
-                                            <form:errors path="clientAppImageId" cssClass="form-group has-error" element="div"/>
-
-                                            <form:label path="clientAppPublishedPort">Port</form:label>
-                                            <form:input type="number" path="clientAppPublishedPort" class="form-control"/>
+                                            <inputs:text label="Docker image" bindPath="clientAppImageId"/>
+                                            <inputs:text label="Port" bindPath="clientAppPublishedPort"/>
                                         </div>
                                     </div>
                                     <div class="panel panel-info">
@@ -82,13 +100,13 @@
                                             Server Application
                                         </div>
                                         <div class="panel-body">
-                                            <form:label path="serverAppImageId">Docker image</form:label>
-                                            <form:input path="serverAppImageId" class="form-control"/>
-                                            <form:label path="serverAppPublishedPort">Port</form:label>
-                                            <form:input type="number" path="serverAppPublishedPort" class="form-control"/>
+                                            <inputs:text label="Docker image" bindPath="serverAppImageId"/>
+                                            <inputs:text label="Port" bindPath="serverAppPublishedPort"/>
                                         </div>
                                     </div>
-                                    <form:button type="submit" class="btn btn-default">Create</form:button>
+                                    <form:hidden path="id"/>
+                                    <form:button type="submit" class="btn btn-default">${isNew ? 'Create' : 'Save'}</form:button>
+                                    <a href="/" class="btn btn-default">Cancel</a>
                                     </form:form>
                                 </div>
                             </div>
