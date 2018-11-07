@@ -2,6 +2,8 @@ package pl.mgr.hs.manager.service;
 
 import com.google.common.collect.Lists;
 import com.spotify.docker.client.messages.swarm.Node;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -11,8 +13,9 @@ import pl.mgr.hs.docker.util.service.machine.DockerMachineService;
 import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
 import pl.mgr.hs.docker.util.service.virtualbox.VirtualboxService;
 import pl.mgr.hs.manager.converter.GenericConverter;
-import pl.mgr.hs.manager.dto.SliceListDto;
-import pl.mgr.hs.manager.dto.details.SliceDetailsDto;
+import pl.mgr.hs.manager.converter.SliceListConverter;
+import pl.mgr.hs.manager.dto.rest.SliceDto;
+import pl.mgr.hs.manager.dto.web.details.SliceDetailsDto;
 import pl.mgr.hs.manager.entity.Application;
 import pl.mgr.hs.manager.entity.Slice;
 import pl.mgr.hs.manager.form.NewSliceForm;
@@ -25,9 +28,11 @@ import java.util.stream.Collectors;
 /** Created by dominik on 20.10.18. */
 @Service
 public class DefaultSliceService implements SliceService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSliceService.class);
+
   private static final String MASTER_POSTFIX = "-master";
   private final SliceRepository sliceRepository;
-  private final GenericConverter<SliceListDto, Slice> sliceListConverter;
+  private final SliceListConverter sliceListConverter;
   private final GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter;
   private final DockerIntegrationService dockerIntegrationService;
   private final DockerMachineService dockerMachineService;
@@ -36,7 +41,7 @@ public class DefaultSliceService implements SliceService {
   @Autowired
   public DefaultSliceService(
       SliceRepository sliceRepository,
-      @Qualifier("sliceListConverter") GenericConverter<SliceListDto, Slice> sliceListConverter,
+      SliceListConverter sliceListConverter,
       @Qualifier("detailsSliceConverter")
           GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter,
       DockerIntegrationService dockerIntegrationService,
@@ -189,6 +194,14 @@ public class DefaultSliceService implements SliceService {
     }
 
     throw new RuntimeException("Cannot create slice");
+  }
+
+  @Override
+  public List<SliceDto> getAvailableSlicesForHost(String hostId) {
+    LOGGER.debug("ACL validation is not implemented yet");
+
+    return sliceListConverter.createAccessSliceDataDtos(
+        Lists.newArrayList(sliceRepository.findAll()));
   }
 
   private Optional<DockerMachineEnv> getMachineEnvironment(String hostName) {

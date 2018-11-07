@@ -1,4 +1,4 @@
-package pl.mgr.hs.manager.dto.details;
+package pl.mgr.hs.manager.dto.web.details;
 
 import lombok.Data;
 

@@ -5,4 +5,5 @@ public interface Constants {
   String WORKER_ROLE = "worker";
   String SLICE_SERVICE_NAME = "sliceService";
   String SERVER_APP_ID = "serverApp";
+  int DEFAULT_SWARM_PORT = 2377;
 }

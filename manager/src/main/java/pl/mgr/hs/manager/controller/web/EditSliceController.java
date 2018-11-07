@@ -1,4 +1,4 @@
-package pl.mgr.hs.manager.controller;
+package pl.mgr.hs.manager.controller.web;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -6,7 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import pl.mgr.hs.manager.constant.Constants;
-import pl.mgr.hs.manager.dto.details.SliceDetailsDto;
+import pl.mgr.hs.manager.dto.web.details.SliceDetailsDto;
 import pl.mgr.hs.manager.form.NewSliceForm;
 import pl.mgr.hs.manager.service.SliceService;
 

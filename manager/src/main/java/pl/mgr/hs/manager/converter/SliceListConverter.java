@@ -7,14 +7,18 @@ import pl.mgr.hs.docker.util.enums.DockerMachineStatus;
 import pl.mgr.hs.docker.util.service.DockerMachineEnv;
 import pl.mgr.hs.docker.util.service.machine.DockerMachineService;
 import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
-import pl.mgr.hs.manager.dto.SliceListDto;
+import pl.mgr.hs.manager.dto.rest.SliceDto;
+import pl.mgr.hs.manager.dto.web.SliceListDto;
 import pl.mgr.hs.manager.entity.Slice;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static pl.mgr.hs.docker.util.constant.Constants.DEFAULT_SWARM_PORT;
 
 /** Created by dominik on 20.10.18. */
 @Component
-public class SliceListConverter implements GenericConverter<SliceListDto, Slice> {
+public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
 
   private static final String READY_STATUS = "ready";
   private final DockerMachineService dockerMachineService;
@@ -54,5 +58,29 @@ public class SliceListConverter implements GenericConverter<SliceListDto, Slice>
         .stream()
         .filter(node -> READY_STATUS.equals(node.status().state()))
         .count();
+  }
+
+  public List<SliceDto> createAccessSliceDataDtos(List<Slice> slices) {
+    return slices.stream().map(this::createAccessDto).collect(Collectors.toList());
+  }
+
+  private SliceDto createAccessDto(Slice slice) {
+    SliceDto dto = new SliceDto();
+    dto.setName(slice.getName());
+    String fullJoinToken =
+        getJoinToken(dockerMachineService.getMachineEnv(slice.getManagerHostName()))
+            + " "
+            + dockerMachineService.getExternalIpAddress(slice.getManagerHostName())
+            + ":"
+            + DEFAULT_SWARM_PORT;
+
+    dto.setJoinToken(fullJoinToken);
+
+    return dto;
+  }
+
+  @Override
+  protected DockerIntegrationService getDockerIntegrationService() {
+    return dockerIntegrationService;
   }
 }

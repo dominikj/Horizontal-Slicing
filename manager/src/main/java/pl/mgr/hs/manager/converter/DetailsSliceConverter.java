@@ -13,9 +13,9 @@ import pl.mgr.hs.docker.util.enums.DockerMachineStatus;
 import pl.mgr.hs.docker.util.service.DockerMachineEnv;
 import pl.mgr.hs.docker.util.service.machine.DockerMachineService;
 import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
-import pl.mgr.hs.manager.dto.details.ApplicationDto;
-import pl.mgr.hs.manager.dto.details.HostDto;
-import pl.mgr.hs.manager.dto.details.SliceDetailsDto;
+import pl.mgr.hs.manager.dto.web.details.ApplicationDto;
+import pl.mgr.hs.manager.dto.web.details.HostDto;
+import pl.mgr.hs.manager.dto.web.details.SliceDetailsDto;
 import pl.mgr.hs.manager.entity.Slice;
 
 import java.util.Collections;
@@ -27,7 +27,7 @@ import static pl.mgr.hs.docker.util.constant.Constants.SERVER_APP_ID;
 
 /** Created by dominik on 24.10.18. */
 @Component
-public class DetailsSliceConverter implements GenericConverter<SliceDetailsDto, Slice> {
+public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice> {
   private static final Logger LOGGER = LoggerFactory.getLogger(DetailsSliceConverter.class);
 
   private static final String SERVER_APP_CONTAINER_NAME = "\\S+" + SERVER_APP_ID;
@@ -104,13 +104,6 @@ public class DetailsSliceConverter implements GenericConverter<SliceDetailsDto, 
     return host;
   }
 
-  private String getJoinToken(DockerMachineEnv env) {
-    return dockerIntegrationService
-        .getSwarmConfiguration(env)
-        .map(swarm -> swarm.joinTokens().worker())
-        .orElse("");
-  }
-
   private ApplicationDto getClientApplication(DockerMachineEnv env) {
     List<Service> services = dockerIntegrationService.getServices(env);
 
@@ -181,5 +174,10 @@ public class DetailsSliceConverter implements GenericConverter<SliceDetailsDto, 
     dto.setServerApplication(serverApplication);
     dto.setClientApplication(clientApplication);
     return dto;
+  }
+
+  @Override
+  protected DockerIntegrationService getDockerIntegrationService() {
+    return dockerIntegrationService;
   }
 }

@@ -1,5 +1,5 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ attribute name="slice" required="true" type="pl.mgr.hs.manager.dto.SliceListDto" %>
+<%@ attribute name="slice" required="true" type="pl.mgr.hs.manager.dto.web.SliceListDto" %>
 
 <c:set var="tileConfiguration">
     <c:choose>
