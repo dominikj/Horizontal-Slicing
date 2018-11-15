@@ -6,5 +6,6 @@ import lombok.Data;
 @Data
 public class SliceDto {
   private String name;
-  private String joinToken;
+  private String description;
+  private Integer id;
 }

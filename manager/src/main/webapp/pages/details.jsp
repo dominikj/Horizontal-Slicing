@@ -92,6 +92,8 @@
                                         <dl>
                                             <dt>Name</dt>
                                             <dd>${slice.name}</dd>
+                                            <dt>Description</dt>
+                                            <dd>${slice.description}</dd>
                                             <dt>Manager host name</dt>
                                             <dd>${slice.managerHostName}</dd>
                                             <dt>Manager host address</dt>

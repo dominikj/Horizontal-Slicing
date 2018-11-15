@@ -12,6 +12,9 @@ public class NewSliceForm {
   @NotBlank(message = "Name cannot be blank")
   private String name;
 
+  @NotBlank(message = "Description cannot be blank")
+  private String description;
+
   @NotBlank(message = "Client application image id cannot be blank")
   private String clientAppImageId;
 

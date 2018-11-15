@@ -63,6 +63,7 @@
                                 <thead>
                                 <tr>
                                     <th>Name</th>
+                                    <th>Description</th>
                                     <th>Status</th>
                                     <th>Addresses</th>
                                     <th>Connected hosts</th>
@@ -73,6 +74,7 @@
                                 <c:forEach items="${slices}" var="slice">
                                     <tr class="odd gradeX">
                                         <td class="center">${slice.name}</td>
+                                        <td class="center">${slice.description}</td>
                                         <td class="center">${slice.working ? 'working' : 'stopped'}</td>
                                         <td class="center">${slice.ipAddress}</td>
                                         <td class="center">${slice.activeHosts}</td>

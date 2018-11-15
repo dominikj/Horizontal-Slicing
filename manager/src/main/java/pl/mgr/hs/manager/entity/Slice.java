@@ -9,7 +9,12 @@ import javax.persistence.*;
 @Entity
 public class Slice {
   @Id @GeneratedValue private Integer id;
+
   private String name;
+
+  @Column(length = 1024)
+  private String description;
+
   private String managerHostName;
 
   @OneToOne(cascade = CascadeType.ALL)

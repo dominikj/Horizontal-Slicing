@@ -84,7 +84,8 @@
                                 <form:form role="form" method="POST" modelAttribute="slice" action="${saveUrl}">
                                 <div class="form-group">
                                     <div class="panel">
-                                        <inputs:text readonly="${not isNew}" label="Slice name" bindPath="name"/>
+                                        <inputs:text label="Slice name" bindPath="name"/>
+                                        <inputs:text label="Description" bindPath="description"/>
                                     </div>
                                     <div class="panel panel-info">
                                         <div class="panel-heading">

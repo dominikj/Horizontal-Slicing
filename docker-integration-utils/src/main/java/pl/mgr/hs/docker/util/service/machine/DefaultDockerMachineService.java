@@ -153,7 +153,7 @@ public class DefaultDockerMachineService extends CliExecutorService
   }
 
   private Result<String> createResultForMachineListSearch(List<String> commandOutput) {
-    LOGGER.info(String.join("\n", commandOutput));
+    LOGGER.debug(String.join("\n", commandOutput));
 
     if (isOnlyHeaderLine(commandOutput.size())) {
       return new Result<>(null, true);
@@ -188,7 +188,7 @@ public class DefaultDockerMachineService extends CliExecutorService
   }
 
   private Result createResultForRemoveMachine(List<String> commandOutput) {
-    LOGGER.info(String.join("\n", commandOutput));
+    LOGGER.debug(String.join("\n", commandOutput));
 
     if (commandOutput.size() == SUCCESS_REMOVE_MACHINE_OUTPUT_SIZE
         && commandOutput.get(2).matches(SUCCESSFULLY_REMOVED_MSG)) {
@@ -198,7 +198,7 @@ public class DefaultDockerMachineService extends CliExecutorService
   }
 
   private Result createResultForRestartMachine(List<String> commandOutput) {
-    LOGGER.info(String.join("\n", commandOutput));
+    LOGGER.debug(String.join("\n", commandOutput));
 
     if (commandOutput.stream().anyMatch(line -> line.matches(SUCCESSFULLY_RESTARTED_MSG))) {
       return new Result<>(null, false);
@@ -207,7 +207,7 @@ public class DefaultDockerMachineService extends CliExecutorService
   }
 
   private Result createResultForRegenerateCerts(List<String> commandOutput) {
-    LOGGER.info(String.join("\n", commandOutput));
+    LOGGER.debug(String.join("\n", commandOutput));
 
     if (commandOutput.size() == SUCCESS_REGENERATE_CERTS_OUTPUT_SIZE) {
       return new Result<>(null, false);
@@ -216,7 +216,7 @@ public class DefaultDockerMachineService extends CliExecutorService
   }
 
   private Result createResultForCreateMachine(List<String> commandOutput) {
-    LOGGER.info(String.join("\n", commandOutput));
+    LOGGER.debug(String.join("\n", commandOutput));
 
     if (commandOutput.stream().anyMatch(DOCKER_IS_UP_AND_RUNNING_MSG::equals)) {
       return new Result<>(null, false);
@@ -225,7 +225,7 @@ public class DefaultDockerMachineService extends CliExecutorService
   }
 
   private Result createResultForStopMachine(List<String> commandOutput) {
-    LOGGER.info(String.join("\n", commandOutput));
+    LOGGER.debug(String.join("\n", commandOutput));
 
     if (commandOutput.size() == SUCCESS_STOP_MACHINE_OUTPUT_SIZE
         && commandOutput.get(1).matches(SUCCESSFULLY_STOPPED_MSG)) {
@@ -235,7 +235,7 @@ public class DefaultDockerMachineService extends CliExecutorService
   }
 
   private Result createResultForGetExternalIpAddress(List<String> commandOutput) {
-    LOGGER.info(String.join("\n", commandOutput));
+    LOGGER.debug(String.join("\n", commandOutput));
 
     if (commandOutput.size() == SUCCESS_GET_EXTERNAL_IP_ADDRESS_OUTPUT_SIZE
         && commandOutput.get(1).matches(SUCCESS_GET_EXTERNAL_IP)) {

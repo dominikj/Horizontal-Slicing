@@ -2,6 +2,7 @@ package pl.mgr.hs.manager.service;
 
 import com.google.common.collect.Lists;
 import com.spotify.docker.client.messages.swarm.Node;
+import org.apache.commons.lang.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,23 +15,30 @@ import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
 import pl.mgr.hs.docker.util.service.virtualbox.VirtualboxService;
 import pl.mgr.hs.manager.converter.GenericConverter;
 import pl.mgr.hs.manager.converter.SliceListConverter;
+import pl.mgr.hs.manager.dto.internal.NodeDto;
+import pl.mgr.hs.manager.dto.rest.JoinTokenDto;
 import pl.mgr.hs.manager.dto.rest.SliceDto;
+import pl.mgr.hs.manager.dto.web.SliceListDto;
 import pl.mgr.hs.manager.dto.web.details.SliceDetailsDto;
 import pl.mgr.hs.manager.entity.Application;
 import pl.mgr.hs.manager.entity.Slice;
 import pl.mgr.hs.manager.form.NewSliceForm;
 import pl.mgr.hs.manager.repository.SliceRepository;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static pl.mgr.hs.docker.util.constant.Constants.UNKNOWN_NODE_STATE;
+
 /** Created by dominik on 20.10.18. */
 @Service
 public class DefaultSliceService implements SliceService {
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSliceService.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(SliceService.class);
 
   private static final String MASTER_POSTFIX = "-master";
+  public static final int MACHINE_ID_LENGTH = 20;
   private final SliceRepository sliceRepository;
   private final SliceListConverter sliceListConverter;
   private final GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter;
@@ -57,7 +65,7 @@ public class DefaultSliceService implements SliceService {
   }
 
   @Override
-  public Iterable getAllSlices() {
+  public List<SliceListDto> getAllSlices() {
     return sliceListConverter.createDtos(Lists.newArrayList(sliceRepository.findAll()));
   }
 
@@ -71,10 +79,7 @@ public class DefaultSliceService implements SliceService {
 
   @Override
   public void stopSlice(int id) {
-    Slice sliceToStop =
-        sliceRepository
-            .findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Given slice is not existing"));
+    Slice sliceToStop = getSliceFromRepository(id);
 
     Optional<DockerMachineEnv> machineEnv = getMachineEnvironment(sliceToStop.getManagerHostName());
 
@@ -86,10 +91,7 @@ public class DefaultSliceService implements SliceService {
 
   @Override
   public void startSlice(int id) {
-    Slice sliceToStart =
-        sliceRepository
-            .findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Given slice is not existing"));
+    Slice sliceToStart = getSliceFromRepository(id);
 
     dockerMachineService.restartMachine(sliceToStart.getManagerHostName());
     dockerMachineService.regenerateCertsForMachine(sliceToStart.getManagerHostName());
@@ -98,7 +100,9 @@ public class DefaultSliceService implements SliceService {
 
     if (machineEnv.isPresent()) {
       dockerIntegrationService.leaveSwarm(machineEnv.get());
-      dockerIntegrationService.initSwarm(machineEnv.get());
+      dockerIntegrationService.initSwarm(
+          machineEnv.get(),
+          dockerMachineService.getExternalIpAddress(sliceToStart.getManagerHostName()));
 
       Application clientApplication = sliceToStart.getClientApplication();
       dockerIntegrationService.createSliceService(
@@ -113,10 +117,7 @@ public class DefaultSliceService implements SliceService {
 
   @Override
   public void removeSlice(int id) {
-    Slice sliceToRemove =
-        sliceRepository
-            .findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Given slice is not existing"));
+    Slice sliceToRemove = getSliceFromRepository(id);
 
     dockerMachineService.removeMachine(sliceToRemove.getManagerHostName());
     sliceRepository.delete(sliceToRemove);
@@ -124,10 +125,7 @@ public class DefaultSliceService implements SliceService {
 
   @Override
   public void restartSlice(int id) {
-    Slice slice =
-        sliceRepository
-            .findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Given slice is not existing"));
+    Slice slice = getSliceFromRepository(id);
 
     Optional<DockerMachineEnv> machineEnv = getMachineEnvironment(slice.getManagerHostName());
 
@@ -136,7 +134,8 @@ public class DefaultSliceService implements SliceService {
       dockerMachineService.restartMachine(slice.getManagerHostName());
       dockerMachineService.regenerateCertsForMachine(slice.getManagerHostName());
       dockerIntegrationService.leaveSwarm(machineEnv.get());
-      dockerIntegrationService.initSwarm(machineEnv.get());
+      dockerIntegrationService.initSwarm(
+          machineEnv.get(), dockerMachineService.getExternalIpAddress(slice.getManagerHostName()));
 
       Application clientApplication = slice.getClientApplication();
       dockerIntegrationService.createSliceService(
@@ -149,11 +148,92 @@ public class DefaultSliceService implements SliceService {
   @Override
   public Integer createSlice(NewSliceForm sliceForm, boolean isNew) {
 
-    String machineName = sliceForm.getName().replaceAll("\\s+", "-") + MASTER_POSTFIX;
+    String machineName;
+    Slice slice;
 
     if (!isNew) {
-      removeSlice(sliceForm.getId());
+      slice = getSliceFromRepository(sliceForm.getId());
+      machineName = slice.getManagerHostName();
+
+      dockerMachineService.removeMachine(machineName);
+    } else {
+      //FIXME
+      machineName = RandomStringUtils.randomAlphanumeric(MACHINE_ID_LENGTH) + MASTER_POSTFIX;
+      slice = new Slice();
     }
+
+    createDockerEnvironmentForSlice(machineName, sliceForm);
+    return sliceRepository.save(populateSliceEntity(slice, machineName, sliceForm)).getId();
+  }
+
+  @Override
+  public List<SliceDto> getAvailableSlicesForHost(String hostId) {
+    LOGGER.debug("ACL is not implemented yet");
+
+    return sliceListConverter.createAccessSliceDataDtos(
+        Lists.newArrayList(sliceRepository.findAll()));
+  }
+
+  @Override
+  public JoinTokenDto getJoinToken(String hostId, Integer sliceId) {
+    LOGGER.debug("ACL is not implemented yet");
+
+    Slice slice = getSliceFromRepository(sliceId);
+    return sliceListConverter.createJoinTokenDto(slice);
+  }
+
+  @Override
+  public List<NodeDto> getAllNodesForSlice(int sliceId) {
+    Slice slice = getSliceFromRepository(sliceId);
+
+    Optional<DockerMachineEnv> machineEnvironment =
+        getMachineEnvironment(slice.getManagerHostName());
+
+    return machineEnvironment
+        .map(
+            dockerMachineEnv ->
+                dockerIntegrationService
+                    .getNodes(dockerMachineEnv)
+                    .stream()
+                    .map(node -> new NodeDto(node.id(), node.status().state()))
+                    .collect(Collectors.toList()))
+        .orElseGet(Collections::emptyList);
+  }
+
+  @Override
+  public String getNodeState(int sliceId, String nodeId) {
+    return getAllNodesForSlice(sliceId)
+        .stream()
+        .filter(nodeDto -> nodeId.equals(nodeDto.getId()))
+        .findFirst()
+        .map(NodeDto::getState)
+        .orElse(UNKNOWN_NODE_STATE);
+  }
+
+  @Override
+  public void removeNodeFromSlice(int sliceId, String nodeId) {
+    Slice slice = getSliceFromRepository(sliceId);
+
+    DockerMachineEnv machineEnvironment =
+        getMachineEnvironment(slice.getManagerHostName())
+            .orElseThrow(
+                () ->
+                    new RuntimeException(
+                        "Machine environment is not available. Cannot remove node"));
+
+    dockerIntegrationService.removeNodesFromSwarm(
+        machineEnvironment, Collections.singletonList(nodeId));
+  }
+
+  @Override
+  public void rotateJoinToken(int sliceId) {
+    Slice slice = getSliceFromRepository(sliceId);
+
+    getMachineEnvironment(slice.getManagerHostName())
+        .ifPresent(dockerIntegrationService::rotateWorkerJoinToken);
+  }
+
+  private void createDockerEnvironmentForSlice(String machineName, NewSliceForm sliceForm) {
 
     dockerMachineService.createNewMachine(machineName);
     dockerMachineService.stopMachine(machineName);
@@ -175,33 +255,28 @@ public class DefaultSliceService implements SliceService {
           machineEnvironment.get(),
           sliceForm.getServerAppImageId(),
           sliceForm.getServerAppPublishedPort());
-
-      Slice slice = new Slice();
-      slice.setManagerHostName(machineName);
-      slice.setName(sliceForm.getName());
-
-      Application serverApp = new Application();
-      serverApp.setImage(sliceForm.getServerAppImageId());
-      serverApp.setPublishedPort(sliceForm.getServerAppPublishedPort());
-      slice.setServerApplication(serverApp);
-
-      Application clientApp = new Application();
-      clientApp.setImage(sliceForm.getClientAppImageId());
-      clientApp.setPublishedPort(sliceForm.getClientAppPublishedPort());
-      slice.setClientApplication(clientApp);
-
-      return sliceRepository.save(slice).getId();
+      return;
     }
 
     throw new RuntimeException("Cannot create slice");
   }
 
-  @Override
-  public List<SliceDto> getAvailableSlicesForHost(String hostId) {
-    LOGGER.debug("ACL validation is not implemented yet");
+  private Slice populateSliceEntity(Slice slice, String machineName, NewSliceForm sliceForm) {
 
-    return sliceListConverter.createAccessSliceDataDtos(
-        Lists.newArrayList(sliceRepository.findAll()));
+    slice.setManagerHostName(machineName);
+    slice.setName(sliceForm.getName());
+    slice.setDescription(sliceForm.getDescription());
+
+    Application serverApp = new Application();
+    serverApp.setImage(sliceForm.getServerAppImageId());
+    serverApp.setPublishedPort(sliceForm.getServerAppPublishedPort());
+    slice.setServerApplication(serverApp);
+
+    Application clientApp = new Application();
+    clientApp.setImage(sliceForm.getClientAppImageId());
+    clientApp.setPublishedPort(sliceForm.getClientAppPublishedPort());
+    slice.setClientApplication(clientApp);
+    return slice;
   }
 
   private Optional<DockerMachineEnv> getMachineEnvironment(String hostName) {
@@ -210,6 +285,12 @@ public class DefaultSliceService implements SliceService {
     } catch (DockerOperationException ex) {
       return Optional.empty();
     }
+  }
+
+  private Slice getSliceFromRepository(int id) {
+    return sliceRepository
+        .findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Given slice is not existing"));
   }
 
   private void removeNodesInternal(DockerMachineEnv env) {

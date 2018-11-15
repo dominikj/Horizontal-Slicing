@@ -29,6 +29,10 @@ public class VersionInterceptor extends HandlerInterceptorAdapter {
       ModelAndView modelAndView)
       throws Exception {
 
+    if (modelAndView == null) {
+      return;
+    }
+
     ModelMap model = modelAndView.getModelMap();
     model.addAllAttributes(ImmutableMap.of("appName", appName, "appVersion", appVersion));
   }

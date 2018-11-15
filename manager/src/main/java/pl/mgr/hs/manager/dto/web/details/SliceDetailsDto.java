@@ -9,6 +9,7 @@ import java.util.List;
 public class SliceDetailsDto {
   private Integer id;
   private String name;
+  private String description;
   private boolean working;
   private String managerHostName;
   private String managerHostAddressInternal;

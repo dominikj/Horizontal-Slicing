@@ -49,6 +49,8 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
     dto.setId(entity.getId());
     dto.setManagerHostName(entity.getManagerHostName());
     dto.setName(entity.getName());
+    dto.setDescription(entity.getDescription());
+
     DockerMachineStatus machineStatus =
         dockerMachineService.getMachineStatus(entity.getManagerHostName());
     dto.setWorking(machineStatus.equals(DockerMachineStatus.Running));

@@ -25,6 +25,7 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
       LoggerFactory.getLogger(DefaultDockerIntegrationService.class);
   private static final String EXCLUDE_MANAGER_PLACEMENT_CONSTRAINT = "node.role!=manager";
   private static final String LATEST_VERSION = "latest";
+  private static final String DEFAULT_LISTEN_ADDR = "0.0.0.0" + ":" + DEFAULT_SWARM_PORT;
 
   @Override
   public List<Node> getNodes(DockerMachineEnv machineEnv) {
@@ -128,7 +129,10 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
     try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
       LOGGER.info("Initializing swarm with advertise address: {}....", advertiseAddress);
       docker.initSwarm(
-          SwarmInit.builder().advertiseAddr(advertiseAddress).listenAddr(advertiseAddress).build());
+          SwarmInit.builder()
+              .advertiseAddr(advertiseAddress)
+              .listenAddr(DEFAULT_LISTEN_ADDR)
+              .build());
 
     } catch (DockerException | InterruptedException e) {
       throw new DockerOperationException(
@@ -226,6 +230,21 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
           String.format(
               "Cannot create server application container on machine: %s",
               machineEnv.getAddress().getHost()),
+          e);
+    }
+  }
+
+  @Override
+  public void rotateWorkerJoinToken(DockerMachineEnv machineEnv) {
+    try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
+
+      docker.updateSwarm(
+          docker.inspectSwarm().version().index(), true, docker.inspectSwarm().swarmSpec());
+
+    } catch (DockerException | InterruptedException e) {
+      throw new DockerOperationException(
+          String.format(
+              "Cannot rotate join token on machine: %s", machineEnv.getAddress().getHost()),
           e);
     }
   }

@@ -6,23 +6,23 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import pl.mgr.hs.manager.constant.Constants;
-import pl.mgr.hs.manager.service.SliceService;
+import pl.mgr.hs.manager.facade.SliceFacade;
 
 /** Created by dominik on 19.10.18. */
 @Controller
 @RequestMapping("/list")
 public class SliceListController {
 
-  private final SliceService sliceService;
+  private final SliceFacade sliceFacade;
 
   @Autowired
-  public SliceListController(SliceService sliceService) {
-    this.sliceService = sliceService;
+  public SliceListController(SliceFacade sliceFacade) {
+    this.sliceFacade = sliceFacade;
   }
 
   @GetMapping
   public String create(Model model) {
-    model.addAttribute("slices", sliceService.getAllSlices());
+    model.addAttribute("slices", sliceFacade.getAllSlices());
     return Constants.Pages.LIST;
   }
 }

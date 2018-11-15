@@ -37,4 +37,6 @@ public interface DockerIntegrationService {
   void restartServerContainer(DockerMachineEnv machineEnv);
 
   void createServerContainer(DockerMachineEnv machineEnv, String imageId, Integer publishedPort);
+
+  void rotateWorkerJoinToken(DockerMachineEnv machineEnv);
 }

@@ -7,6 +7,7 @@ import lombok.Data;
 public class SliceListDto {
   private Integer id;
   private String name;
+  private String description;
   private boolean working;
   private long activeHosts;
   private String ipAddress;

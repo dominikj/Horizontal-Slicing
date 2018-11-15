@@ -4,6 +4,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
@@ -16,14 +21,18 @@ import pl.mgr.hs.docker.util.service.virtualbox.VirtualboxService;
 import pl.mgr.hs.manager.interceptor.VersionInterceptor;
 
 @Configuration
+@EnableScheduling
 @PropertySource("classpath:pass.properties")
-public class MvcConfig implements WebMvcConfigurer {
+public class ManagerConfiguration implements WebMvcConfigurer, SchedulingConfigurer {
 
   @Value("${app.name}")
   private String appName;
 
   @Value("${app.version}")
   private String appVersion;
+
+  @Value(("${scheduler.pool.size}"))
+  private int schedulerPoolSize;
 
   @Bean
   public InternalResourceViewResolver viewResolver() {
@@ -57,5 +66,17 @@ public class MvcConfig implements WebMvcConfigurer {
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
     registry.addInterceptor(versionInterceptor()).excludePathPatterns("/rest/*");
+  }
+
+  @Override
+  public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
+    taskRegistrar.setTaskScheduler(threadPoolTaskScheduler());
+  }
+
+  @Bean
+  public TaskScheduler threadPoolTaskScheduler() {
+    ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+    scheduler.setPoolSize(schedulerPoolSize);
+    return scheduler;
   }
 }

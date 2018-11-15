@@ -7,6 +7,7 @@ import pl.mgr.hs.docker.util.enums.DockerMachineStatus;
 import pl.mgr.hs.docker.util.service.DockerMachineEnv;
 import pl.mgr.hs.docker.util.service.machine.DockerMachineService;
 import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
+import pl.mgr.hs.manager.dto.rest.JoinTokenDto;
 import pl.mgr.hs.manager.dto.rest.SliceDto;
 import pl.mgr.hs.manager.dto.web.SliceListDto;
 import pl.mgr.hs.manager.entity.Slice;
@@ -35,6 +36,8 @@ public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
   @Override
   public SliceListDto createDto(Slice entity) {
     SliceListDto dto = new SliceListDto();
+
+    dto.setDescription(entity.getDescription());
     dto.setId(entity.getId());
     dto.setName(entity.getName());
 
@@ -52,6 +55,19 @@ public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
     return dto;
   }
 
+  public List<SliceDto> createAccessSliceDataDtos(List<Slice> slices) {
+    return slices.stream().map(this::createAccessDto).collect(Collectors.toList());
+  }
+
+  public JoinTokenDto createJoinTokenDto(Slice slice) {
+    JoinTokenDto dto = new JoinTokenDto();
+
+    dto.setToken(getJoinToken(dockerMachineService.getMachineEnv(slice.getManagerHostName())));
+    dto.setPort(DEFAULT_SWARM_PORT);
+    dto.setIpAddress(dockerMachineService.getExternalIpAddress(slice.getManagerHostName()));
+    return dto;
+  }
+
   private long getNumberOfActiveHosts(DockerMachineEnv machineEnv) {
     List<Node> connectedHosts = dockerIntegrationService.getNodes(machineEnv);
     return connectedHosts
@@ -60,22 +76,11 @@ public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
         .count();
   }
 
-  public List<SliceDto> createAccessSliceDataDtos(List<Slice> slices) {
-    return slices.stream().map(this::createAccessDto).collect(Collectors.toList());
-  }
-
   private SliceDto createAccessDto(Slice slice) {
     SliceDto dto = new SliceDto();
     dto.setName(slice.getName());
-    String fullJoinToken =
-        getJoinToken(dockerMachineService.getMachineEnv(slice.getManagerHostName()))
-            + " "
-            + dockerMachineService.getExternalIpAddress(slice.getManagerHostName())
-            + ":"
-            + DEFAULT_SWARM_PORT;
-
-    dto.setJoinToken(fullJoinToken);
-
+    dto.setId(slice.getId());
+    dto.setDescription(slice.getDescription());
     return dto;
   }
 

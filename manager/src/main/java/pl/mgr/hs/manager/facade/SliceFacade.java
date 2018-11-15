@@ -1,6 +1,5 @@
-package pl.mgr.hs.manager.service;
+package pl.mgr.hs.manager.facade;
 
-import pl.mgr.hs.manager.dto.internal.NodeDto;
 import pl.mgr.hs.manager.dto.rest.JoinTokenDto;
 import pl.mgr.hs.manager.dto.rest.SliceDto;
 import pl.mgr.hs.manager.dto.web.SliceListDto;
@@ -9,9 +8,8 @@ import pl.mgr.hs.manager.form.NewSliceForm;
 
 import java.util.List;
 
-/** Created by dominik on 20.10.18. */
-public interface SliceService {
-
+/** Created by dominik on 09.11.18. */
+public interface SliceFacade {
   List<SliceListDto> getAllSlices();
 
   SliceDetailsDto getSlice(int id);
@@ -29,12 +27,4 @@ public interface SliceService {
   List<SliceDto> getAvailableSlicesForHost(String hostId);
 
   JoinTokenDto getJoinToken(String hostId, Integer sliceId);
-
-  List<NodeDto> getAllNodesForSlice(int sliceId);
-
-  String getNodeState(int sliceId, String nodeId);
-
-  void removeNodeFromSlice(int sliceId, String nodeId);
-
-  void rotateJoinToken(int sliceId);
 }
