@@ -35,9 +35,14 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
 
     } catch (DockerException | InterruptedException e) {
 
-      LOGGER.error("Cannot get nodes list from machine {}", machineEnv.getAddress().getHost());
+      LOGGER.error("Cannot get nodes list from machine {}", getHostAddress(machineEnv));
       return Collections.emptyList();
     }
+  }
+
+  @Override
+  public List<Node> getNodes() {
+    return getNodes(null);
   }
 
   @Override
@@ -55,6 +60,11 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   }
 
   @Override
+  public List<Task> getTasksForNode(String nodeId) {
+    return getTasksForNode(null, nodeId);
+  }
+
+  @Override
   public Optional<Swarm> getSwarmConfiguration(DockerMachineEnv machineEnv) {
 
     try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
@@ -63,9 +73,14 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
 
     } catch (DockerException | InterruptedException e) {
 
-      LOGGER.error("Cannot get swarm configuration for : {}", machineEnv.getAddress().getHost());
+      LOGGER.error("Cannot get swarm configuration for : {}", getHostAddress(machineEnv));
       return Optional.empty();
     }
+  }
+
+  @Override
+  public Optional<Swarm> getSwarmConfiguration() {
+    return getSwarmConfiguration(null);
   }
 
   @Override
@@ -76,10 +91,14 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
 
     } catch (DockerException | InterruptedException e) {
 
-      LOGGER.error(
-          "Cannot get list of services for machine: {}", machineEnv.getAddress().getHost());
+      LOGGER.error("Cannot get list of services for machine: {}", getHostAddress(machineEnv));
       return Collections.emptyList();
     }
+  }
+
+  @Override
+  public List<Service> getServices() {
+    return getServices(null);
   }
 
   @Override
@@ -90,10 +109,14 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
 
     } catch (DockerException | InterruptedException e) {
 
-      LOGGER.error(
-          "Cannot get list of containers for machine: {}", machineEnv.getAddress().getHost());
+      LOGGER.error("Cannot get list of containers for machine: {}", getHostAddress(machineEnv));
       return Collections.emptyList();
     }
+  }
+
+  @Override
+  public List<Container> getContainers(boolean onlyRunningContainers) {
+    return getContainers(null, onlyRunningContainers);
   }
 
   @Override
@@ -113,15 +136,40 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   }
 
   @Override
+  public void removeNodesFromSwarm(List<String> nodeIds) {
+    removeNodesFromSwarm(null, nodeIds);
+  }
+
+  @Override
+  public void joinSwarm(String joinToken, String remoteAddress) {
+    try (DefaultDockerClient docker = createDockerConnection(null)) {
+      docker.joinSwarm(
+          SwarmJoin.builder()
+              .joinToken(joinToken)
+              .remoteAddrs(Collections.singletonList(remoteAddress))
+              .listenAddr(DEFAULT_LISTEN_ADDR)
+              .build());
+
+    } catch (DockerException | InterruptedException e) {
+      throw new DockerOperationException(
+          String.format("Cannot join to swarm using token: %s ", joinToken), e);
+    }
+  }
+
+  @Override
   public void leaveSwarm(DockerMachineEnv machineEnv) {
     try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
       docker.leaveSwarm(true);
 
     } catch (DockerException | InterruptedException e) {
       throw new DockerOperationException(
-          String.format("Cannot leave machine: %s from swarm", machineEnv.getAddress().getHost()),
-          e);
+          String.format("Cannot leave machine: %s from swarm", getHostAddress(machineEnv)), e);
     }
+  }
+
+  @Override
+  public void leaveSwarm() {
+    leaveSwarm(null);
   }
 
   @Override
@@ -136,9 +184,13 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
 
     } catch (DockerException | InterruptedException e) {
       throw new DockerOperationException(
-          String.format("Cannot create swarm on machine: %s", machineEnv.getAddress().getHost()),
-          e);
+          String.format("Cannot create swarm on machine: %s", getHostAddress(machineEnv)), e);
     }
+  }
+
+  @Override
+  public void initSwarm(String advertiseAddress) {
+    initSwarm(null, advertiseAddress);
   }
 
   @Override
@@ -176,9 +228,13 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
 
     } catch (DockerException | InterruptedException e) {
       throw new DockerOperationException(
-          String.format("Cannot create service on machine: %s", machineEnv.getAddress().getHost()),
-          e);
+          String.format("Cannot create service on machine: %s", getHostAddress(machineEnv)), e);
     }
+  }
+
+  @Override
+  public void createSliceService(String imageId, Integer port) {
+    createSliceService(null, imageId, port);
   }
 
   @Override
@@ -190,9 +246,14 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
       throw new DockerOperationException(
           String.format(
               "Cannot remove server application container on machine: %s",
-              machineEnv.getAddress().getHost()),
+              getHostAddress(machineEnv)),
           e);
     }
+  }
+
+  @Override
+  public void removeServerContainer() {
+    removeServerContainer(null);
   }
 
   @Override
@@ -204,9 +265,14 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
       throw new DockerOperationException(
           String.format(
               "Cannot restart server application container on machine: %s",
-              machineEnv.getAddress().getHost()),
+              getHostAddress(machineEnv)),
           e);
     }
+  }
+
+  @Override
+  public void restartServerContainer() {
+    removeServerContainer(null);
   }
 
   @Override
@@ -229,9 +295,14 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
       throw new DockerOperationException(
           String.format(
               "Cannot create server application container on machine: %s",
-              machineEnv.getAddress().getHost()),
+              getHostAddress(machineEnv)),
           e);
     }
+  }
+
+  @Override
+  public void createServerContainer(String imageId, Integer publishedPort) {
+    createServerContainer(null, imageId, publishedPort);
   }
 
   @Override
@@ -243,14 +314,22 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
 
     } catch (DockerException | InterruptedException e) {
       throw new DockerOperationException(
-          String.format(
-              "Cannot rotate join token on machine: %s", machineEnv.getAddress().getHost()),
-          e);
+          String.format("Cannot rotate join token on machine: %s", getHostAddress(machineEnv)), e);
     }
+  }
+
+  @Override
+  public void rotateWorkerJoinToken() {
+    rotateWorkerJoinToken(null);
   }
 
   private DefaultDockerClient createDockerConnection(DockerMachineEnv machineEnv) {
     try {
+
+      if (machineEnv == null) {
+        return DefaultDockerClient.fromEnv().build();
+      }
+
       return DefaultDockerClient.builder()
           .uri(machineEnv.getAddress())
           .dockerCertificates(new DockerCertificates(machineEnv.getCertPath()))
@@ -258,5 +337,9 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
     } catch (DockerCertificateException e) {
       throw new IllegalStateException("Cannot get certs for docker machine", e);
     }
+  }
+
+  private String getHostAddress(DockerMachineEnv env) {
+    return env == null ? "localhost" : env.getAddress().getHost();
   }
 }

@@ -4,5 +4,6 @@ package pl.mgr.hs.docker.util.enums;
 public enum DockerMachineStatus {
   Running,
   Stopped,
-  Unknown;
+  Unknown,
+  Error;
 }
