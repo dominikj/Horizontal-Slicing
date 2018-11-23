@@ -4,6 +4,9 @@ import pl.mgr.hs.client.cli.rest.data.slice.SliceListResponse;
 
 /** Created by dominik on 18.11.18. */
 public class MenuService {
+
+  private static final String LIST_FORMAT = "%-30.30s %-60.60s \n";
+
   public void showUsage() {
     System.out.println(
         " Commands: \n"
@@ -15,13 +18,13 @@ public class MenuService {
   }
 
   public void showList(SliceListResponse response) {
-    System.out.printf("%-30.30s %-60.60s \n", "NAME", "DESCRIPTION");
+    System.out.printf(LIST_FORMAT, "NAME", "DESCRIPTION");
 
     response
         .getSlices()
         .forEach(
             sliceData ->
-                System.out.printf("%-30.30s %-60.60s \n", sliceData.getName(), sliceData.getDescription()));
+                System.out.printf(LIST_FORMAT, sliceData.getName(), sliceData.getDescription()));
   }
 
   public void showCommand() {
