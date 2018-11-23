@@ -6,20 +6,25 @@ import pl.mgr.hs.client.cli.rest.data.slice.SliceListResponse;
 public class MenuService {
   public void showUsage() {
     System.out.println(
-        "Usage: \n"
-            + " sliceclient -h <manager ip:port> command \n"
-            + " Commands: \n"
-            + " --list - list of available slices \n"
-            + " --connect <slice name> - connect to slice"
-            + " --disconnect - disconnect from slice");
+        " Commands: \n"
+            + " list - list of available slices \n"
+            + " connect <slice name> - connect to slice \n"
+            + " disconnect - disconnect from slice \n"
+            + " service - attach to service application served by slice \n"
+            + " exit - exit");
   }
 
   public void showList(SliceListResponse response) {
-    System.out.println("NAME \t DESCRIPTION");
+    System.out.printf("%-30.30s %-60.60s \n", "NAME", "DESCRIPTION");
+
     response
         .getSlices()
-        .stream()
-        .map(sliceData -> sliceData.getName() + "\t" + sliceData.getDescription() + "\n")
-        .forEachOrdered(System.out::print);
+        .forEach(
+            sliceData ->
+                System.out.printf("%-30.30s %-60.60s \n", sliceData.getName(), sliceData.getDescription()));
+  }
+
+  public void showCommand() {
+    System.out.println("Usage: \n" + " sliceclient <manager ip:port> \n");
   }
 }

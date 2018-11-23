@@ -7,59 +7,83 @@ import pl.mgr.hs.client.cli.rest.SliceService;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 /** Created by dominik on 16.11.18. */
 public class ClientCli {
 
-  private static final String LIST_OPTION = "--list";
-  private static final String HOST_PARAM = "-h";
-  private static final int HOST_ADDRESS_PARAM_INDEX = 0;
+  private static final String LIST_OPTION = "list";
   private static final String HOST_ADDRESS_FORMAT = "^\\d+.\\d+.\\d+.\\d+:\\d+$";
-  private static final int HOST_ADDRESS_VALUE_INDEX = 1;
-  private static final int COMMAND_INDEX = 2;
-  private static final String CONNECT_OPTION = "--connect";
-  private static final int COMMAND_PARAM_INDEX = 3;
-  private static final String DISCONNECT_OPTION = "--disconnect";
+  private static final int COMMAND_INDEX = 0;
+  private static final String CONNECT_OPTION = "connect";
+  private static final String DISCONNECT_OPTION = "disconnect";
+  private static final String SERVICE_OPTION = "service";
+  private static final String WHITESPACES = "\\s+";
+  private static final String EXIT_OPTION = "exit";
+  private static final int ADDRESS_ARG = 0;
+  private static final int SLICE_NAME_PARAM = 1;
+  private static final String COMMAND_PROMPT = ">";
+  private static Scanner scanner = new Scanner(System.in);
 
   public static void main(String[] args) {
 
+    MenuService menu = new MenuService();
+
+    if (args.length != 1 || !addressSyntaxIsCorrect(args[ADDRESS_ARG])) {
+      menu.showCommand();
+      return;
+    }
     // FIXME
     BasicConfigurator.configure(new NullAppender());
 
-    MenuService menu = new MenuService();
     SliceService sliceService = new SliceService();
+    String[] input;
+    String managerAddress = args[ADDRESS_ARG];
 
-    if (!syntaxIsCorrect(args)) {
-      menu.showUsage();
-      return;
-    }
+    menu.showUsage();
 
-    switch (args[COMMAND_INDEX]) {
-      case LIST_OPTION:
-        {
-          menu.showList(
-              sliceService.getAvailableSlicesForHost(
-                  getHostName(), args[HOST_ADDRESS_VALUE_INDEX]));
-          break;
-        }
-      case CONNECT_OPTION:
-        {
-          if (args.length < 4) {
+    while (true) {
+      input = getInput();
+
+      if (input.length > 2) {
+        menu.showUsage();
+        continue;
+      }
+
+      switch (input[COMMAND_INDEX]) {
+        case LIST_OPTION:
+          {
+            menu.showList(sliceService.getAvailableSlicesForHost(getHostName(), managerAddress));
+            break;
+          }
+        case CONNECT_OPTION:
+          {
+            if (input.length != 2) {
+              menu.showUsage();
+              break;
+            }
+            sliceService.joinToSlice(input[SLICE_NAME_PARAM], getHostName(), managerAddress);
+            break;
+          }
+        case DISCONNECT_OPTION:
+          {
+            sliceService.disconnectFromSlice();
+            break;
+          }
+        case SERVICE_OPTION:
+          {
+            sliceService.attachToSliceApp();
+            break;
+          }
+        case EXIT_OPTION:
+          {
+            return;
+          }
+        default:
+          {
             menu.showUsage();
           }
-          sliceService.joinToSlice(
-              args[COMMAND_PARAM_INDEX], getHostName(), args[HOST_ADDRESS_VALUE_INDEX]);
-          break;
-        }
-      case DISCONNECT_OPTION:
-        {
-          sliceService.disconnectFromSlice();
-          break;
-        }
-      default:
-        {
-          menu.showUsage();
-        }
+      }
     }
   }
 
@@ -72,13 +96,14 @@ public class ClientCli {
     return null;
   }
 
-  private static boolean syntaxIsCorrect(String[] args) {
-    if (args.length < 3 || !HOST_PARAM.equals(args[HOST_ADDRESS_PARAM_INDEX])) {
-      return false;
-    }
-    String hostUrl = args[HOST_ADDRESS_VALUE_INDEX];
-    hostUrl = hostUrl.replace("localhost", "127.0.0.1");
+  private static boolean addressSyntaxIsCorrect(String address) {
 
+    String hostUrl = address.replace("localhost", "127.0.0.1");
     return hostUrl.matches(HOST_ADDRESS_FORMAT);
+  }
+
+  private static String[] getInput() {
+    System.out.print(COMMAND_PROMPT);
+    return scanner.nextLine().split(WHITESPACES);
   }
 }
