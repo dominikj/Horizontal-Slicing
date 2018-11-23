@@ -41,9 +41,7 @@ public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
     dto.setId(entity.getId());
     dto.setName(entity.getName());
 
-    DockerMachineStatus machineStatus =
-        dockerMachineService.getMachineStatus(entity.getManagerHostName());
-    dto.setWorking(machineStatus.equals(DockerMachineStatus.Running));
+    dto.setWorking(machineIsWorking(entity.getManagerHostName()));
 
     if (dto.isWorking()) {
       DockerMachineEnv machineEnv = dockerMachineService.getMachineEnv(entity.getManagerHostName());
@@ -56,7 +54,11 @@ public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
   }
 
   public List<SliceDto> createAccessSliceDataDtos(List<Slice> slices) {
-    return slices.stream().map(this::createAccessDto).collect(Collectors.toList());
+    return slices
+        .stream()
+        .filter(slice -> machineIsWorking(slice.getManagerHostName()))
+        .map(this::createAccessDto)
+        .collect(Collectors.toList());
   }
 
   public JoinTokenDto createJoinTokenDto(Slice slice) {
@@ -82,6 +84,11 @@ public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
     dto.setId(slice.getId());
     dto.setDescription(slice.getDescription());
     return dto;
+  }
+
+  private boolean machineIsWorking(String managerHostName) {
+    return DockerMachineStatus.Running.equals(
+        dockerMachineService.getMachineStatus(managerHostName));
   }
 
   @Override

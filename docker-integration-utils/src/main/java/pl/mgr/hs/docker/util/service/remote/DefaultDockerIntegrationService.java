@@ -26,6 +26,7 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   private static final String EXCLUDE_MANAGER_PLACEMENT_CONSTRAINT = "node.role!=manager";
   private static final String LATEST_VERSION = "latest";
   private static final String DEFAULT_LISTEN_ADDR = "0.0.0.0" + ":" + DEFAULT_SWARM_PORT;
+  private static final String SLICE_CLIENT_APP_KEY = "sliceClientApp";
 
   @Override
   public List<Node> getNodes(DockerMachineEnv machineEnv) {
@@ -208,7 +209,11 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
               .name(SLICE_SERVICE_NAME)
               .taskTemplate(
                   TaskSpec.builder()
-                      .containerSpec(ContainerSpec.builder().image(imageId).build())
+                      .containerSpec(
+                          ContainerSpec.builder()
+                              .labels(Collections.singletonMap(SLICE_CLIENT_APP_KEY, ""))
+                              .image(imageId)
+                              .build())
                       .placement(
                           Placement.create(
                               Collections.singletonList(EXCLUDE_MANAGER_PLACEMENT_CONSTRAINT)))
@@ -321,6 +326,22 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   @Override
   public void rotateWorkerJoinToken() {
     rotateWorkerJoinToken(null);
+  }
+
+  @Override
+  public Optional<Container> getClientAppContainer() {
+    try (DefaultDockerClient docker = createDockerConnection(null)) {
+
+      List<Container> containers =
+          docker.listContainers(DockerClient.ListContainersParam.withLabel(SLICE_CLIENT_APP_KEY));
+      if (containers.size() > 1) {
+        throw new DockerOperationException(
+            "Too many slice client application containers are obtained");
+      }
+      return Optional.of(containers.get(0));
+    } catch (DockerException | InterruptedException e) {
+      throw new DockerOperationException("Cannot get container");
+    }
   }
 
   private DefaultDockerClient createDockerConnection(DockerMachineEnv machineEnv) {

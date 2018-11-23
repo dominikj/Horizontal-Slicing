@@ -19,7 +19,7 @@ import java.util.List;
 
 /** Created by dominik on 27.10.18. */
 public abstract class CliExecutorService {
-  private static final String SUDO_COMMAND = " sudo --validate --stdin";
+  protected static final String SUDO_COMMAND = " sudo --validate --stdin";
   private static final Logger LOGGER = LoggerFactory.getLogger(CliExecutorService.class);
 
   @FunctionalInterface
@@ -41,8 +41,19 @@ public abstract class CliExecutorService {
     DefaultExecutor exec = new DefaultExecutor();
     PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
     exec.setStreamHandler(streamHandler);
+
     execute(exec, commandline);
     return resultCreator.create(outputStream.getLines());
+  }
+
+  protected void executeCommandInteractive(String command) {
+    LOGGER.info("Executing command: {}....", command);
+    CommandLine commandline = CommandLine.parse(command);
+    DefaultExecutor exec = new DefaultExecutor();
+    PumpStreamHandler streamHandler = new PumpStreamHandler(System.out, System.err, System.in);
+    exec.setStreamHandler(streamHandler);
+
+    execute(exec, commandline);
   }
 
   @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Temporary unused")

@@ -70,6 +70,12 @@
             <artifactId>findbugs</artifactId>
             <version>3.0.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.spotify</groupId>
+            <artifactId>docker-client</artifactId>
+            <classifier>shaded</classifier>
+            <version>8.14.1</version>
+        </dependency>
     </dependencies>
     <profiles>
         <profile>

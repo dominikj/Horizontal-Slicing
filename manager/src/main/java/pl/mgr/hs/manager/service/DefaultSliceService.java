@@ -38,7 +38,7 @@ public class DefaultSliceService implements SliceService {
   private static final Logger LOGGER = LoggerFactory.getLogger(SliceService.class);
 
   private static final String MASTER_POSTFIX = "-master";
-  public static final int MACHINE_ID_LENGTH = 20;
+  private static final int MACHINE_ID_LENGTH = 20;
   private final SliceRepository sliceRepository;
   private final SliceListConverter sliceListConverter;
   private final GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter;
@@ -157,7 +157,7 @@ public class DefaultSliceService implements SliceService {
 
       dockerMachineService.removeMachine(machineName);
     } else {
-      //FIXME
+      // FIXME
       machineName = RandomStringUtils.randomAlphanumeric(MACHINE_ID_LENGTH) + MASTER_POSTFIX;
       slice = new Slice();
     }

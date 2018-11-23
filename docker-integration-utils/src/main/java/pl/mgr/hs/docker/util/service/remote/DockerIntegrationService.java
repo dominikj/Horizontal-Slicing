@@ -67,4 +67,6 @@ public interface DockerIntegrationService {
   void rotateWorkerJoinToken(DockerMachineEnv machineEnv);
 
   void rotateWorkerJoinToken();
+
+  Optional<Container> getClientAppContainer();
 }
