@@ -37,4 +37,6 @@ public interface SliceService {
   void removeNodeFromSlice(int sliceId, String nodeId);
 
   void rotateJoinToken(int sliceId);
+
+  String getAttachCommandClientApplication(int sliceId);
 }

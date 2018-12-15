@@ -14,7 +14,7 @@ import java.util.List;
 
 /** Created by dominik on 09.11.18. */
 @Component
-public class DefaultSliceFacade implements pl.mgr.hs.manager.facade.SliceFacade {
+public class DefaultSliceFacade implements SliceFacade {
 
   private final SliceService sliceService;
   private final SlicingDaemonService slicingDaemonService;
@@ -78,5 +78,10 @@ public class DefaultSliceFacade implements pl.mgr.hs.manager.facade.SliceFacade 
   @Override
   public JoinTokenDto getJoinToken(String hostId, Integer sliceId) {
     return sliceService.getJoinToken(hostId, sliceId);
+  }
+
+  @Override
+  public String getAttachCommandClientApplication(int sliceId) {
+    return sliceService.getAttachCommandClientApplication(sliceId);
   }
 }

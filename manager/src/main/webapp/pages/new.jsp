@@ -94,6 +94,7 @@
                                         <div class="panel-body">
                                             <inputs:text label="Docker image" bindPath="clientAppImageId"/>
                                             <inputs:text label="Port" bindPath="clientAppPublishedPort"/>
+                                            <inputs:text label="Command" bindPath="clientAppCommand"/>
                                         </div>
                                     </div>
                                     <div class="panel panel-info">
@@ -103,6 +104,7 @@
                                         <div class="panel-body">
                                             <inputs:text label="Docker image" bindPath="serverAppImageId"/>
                                             <inputs:text label="Port" bindPath="serverAppPublishedPort"/>
+                                            <inputs:text label="Command" bindPath="serverAppCommand"/>
                                         </div>
                                     </div>
                                     <form:hidden path="id"/>

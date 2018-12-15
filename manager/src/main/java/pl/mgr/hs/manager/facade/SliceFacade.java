@@ -27,4 +27,6 @@ public interface SliceFacade {
   List<SliceDto> getAvailableSlicesForHost(String hostId);
 
   JoinTokenDto getJoinToken(String hostId, Integer sliceId);
+
+  String getAttachCommandClientApplication(int sliceId);
 }

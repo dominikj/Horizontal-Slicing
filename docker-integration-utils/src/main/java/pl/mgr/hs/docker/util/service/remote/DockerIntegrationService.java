@@ -50,6 +50,8 @@ public interface DockerIntegrationService {
 
   void createSliceService(DockerMachineEnv machineEnv, String imageId, Integer port);
 
+  void createSliceService(String imageId);
+
   void createSliceService(String imageId, Integer port);
 
   void removeServerContainer(DockerMachineEnv machineEnv);
@@ -60,9 +62,10 @@ public interface DockerIntegrationService {
 
   void restartServerContainer();
 
-  void createServerContainer(DockerMachineEnv machineEnv, String imageId, Integer publishedPort);
+  void createServerContainer(
+      DockerMachineEnv machineEnv, String imageId, Integer publishedPort, List<String> command);
 
-  void createServerContainer(String imageId, Integer publishedPort);
+  void createServerContainer(String imageId, Integer publishedPort, List<String> command);
 
   void rotateWorkerJoinToken(DockerMachineEnv machineEnv);
 

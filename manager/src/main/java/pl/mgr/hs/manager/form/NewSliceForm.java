@@ -18,9 +18,10 @@ public class NewSliceForm {
   @NotBlank(message = "Client application image id cannot be blank")
   private String clientAppImageId;
 
-  @NotNull(message = "Port cannot be empty")
   @Min(value = 1, message = "Port cannot be smaller than 1")
   private Integer clientAppPublishedPort;
+
+  private String clientAppCommand;
 
   @NotBlank(message = "Server application image id cannot be blank")
   private String serverAppImageId;
@@ -28,6 +29,8 @@ public class NewSliceForm {
   @NotNull(message = "Port cannot be empty")
   @Min(value = 1, message = "Port cannot be smaller than 1")
   private Integer serverAppPublishedPort;
+
+  private String serverAppCommand;
 
   private int id;
 }

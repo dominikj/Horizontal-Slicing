@@ -17,9 +17,9 @@ public class Slice {
 
   private String managerHostName;
 
-  @OneToOne(cascade = CascadeType.ALL)
+  @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
   private Application clientApplication;
 
-  @OneToOne(cascade = CascadeType.ALL)
+  @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
   private Application serverApplication;
 }

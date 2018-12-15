@@ -3,6 +3,7 @@ package pl.mgr.hs.manager.service;
 import com.google.common.collect.Lists;
 import com.spotify.docker.client.messages.swarm.Node;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import pl.mgr.hs.manager.entity.Slice;
 import pl.mgr.hs.manager.form.NewSliceForm;
 import pl.mgr.hs.manager.repository.SliceRepository;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +41,9 @@ public class DefaultSliceService implements SliceService {
 
   private static final String MASTER_POSTFIX = "-master";
   private static final int MACHINE_ID_LENGTH = 20;
+  private static final String SH_COMMAND = "/bin/sh";
+  private static final String MANAGER_ADDRESS_VARIABLE = "${MANAGER_ADDRESS}";
+  private static final String SPACE_SPLITTER = " ";
   private final SliceRepository sliceRepository;
   private final SliceListConverter sliceListConverter;
   private final GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter;
@@ -233,6 +238,13 @@ public class DefaultSliceService implements SliceService {
         .ifPresent(dockerIntegrationService::rotateWorkerJoinToken);
   }
 
+  @Override
+  public String getAttachCommandClientApplication(int sliceId) {
+    Slice slice = getSliceFromRepository(sliceId);
+    return replaceVariablesInCommand(
+        slice.getClientApplication().getCommand(), slice.getManagerHostName());
+  }
+
   private void createDockerEnvironmentForSlice(String machineName, NewSliceForm sliceForm) {
 
     dockerMachineService.createNewMachine(machineName);
@@ -251,10 +263,13 @@ public class DefaultSliceService implements SliceService {
           sliceForm.getClientAppImageId(),
           sliceForm.getClientAppPublishedPort());
 
+      String processedCommand =
+          replaceVariablesInCommand(sliceForm.getServerAppCommand(), machineName);
       dockerIntegrationService.createServerContainer(
           machineEnvironment.get(),
           sliceForm.getServerAppImageId(),
-          sliceForm.getServerAppPublishedPort());
+          sliceForm.getServerAppPublishedPort(),
+          splitCommand(processedCommand));
       return;
     }
 
@@ -270,11 +285,18 @@ public class DefaultSliceService implements SliceService {
     Application serverApp = new Application();
     serverApp.setImage(sliceForm.getServerAppImageId());
     serverApp.setPublishedPort(sliceForm.getServerAppPublishedPort());
+    serverApp.setCommand(sliceForm.getServerAppCommand());
     slice.setServerApplication(serverApp);
 
     Application clientApp = new Application();
     clientApp.setImage(sliceForm.getClientAppImageId());
     clientApp.setPublishedPort(sliceForm.getClientAppPublishedPort());
+
+    if (StringUtils.isNotBlank(sliceForm.getClientAppCommand())) {
+      clientApp.setCommand(sliceForm.getClientAppCommand());
+    } else {
+      clientApp.setCommand(SH_COMMAND);
+    }
     slice.setClientApplication(clientApp);
     return slice;
   }
@@ -297,5 +319,33 @@ public class DefaultSliceService implements SliceService {
     List<Node> nodes = dockerIntegrationService.getNodes(env);
     List<String> nodeToRemoveIds = nodes.stream().map(Node::id).collect(Collectors.toList());
     dockerIntegrationService.removeNodesFromSwarm(env, nodeToRemoveIds);
+  }
+
+  private String replaceVariablesInCommand(String command, String managerHostName) {
+    if (StringUtils.isNotBlank(command) && command.contains(MANAGER_ADDRESS_VARIABLE)) {
+      return command.replace(
+          MANAGER_ADDRESS_VARIABLE, dockerMachineService.getExternalIpAddress(managerHostName));
+    }
+    return command;
+  }
+
+  private List<String> splitCommand(String command) {
+    List<String> splittedCommand = new ArrayList<>();
+
+    String[] splitted = command.split(SPACE_SPLITTER);
+    for (int i = 0; splitted.length > i; ++i) {
+      if (splitted[i].matches("^\".*")) {
+        StringBuilder singleCommandAccumulator = new StringBuilder();
+        do {
+          singleCommandAccumulator.append(" ").append(splitted[i]);
+          ++i;
+        } while (splitted.length <= i || !splitted[i].matches(".*\"$"));
+
+        splittedCommand.add(singleCommandAccumulator.toString());
+        continue;
+      }
+      splittedCommand.add(splitted[i]);
+    }
+    return splittedCommand;
   }
 }

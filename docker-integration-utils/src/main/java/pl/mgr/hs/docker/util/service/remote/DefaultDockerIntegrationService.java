@@ -3,19 +3,17 @@ package pl.mgr.hs.docker.util.service.remote;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerClient.ListContainersParam;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.Container;
-import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.*;
 import com.spotify.docker.client.messages.swarm.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.mgr.hs.docker.util.exception.DockerOperationException;
 import pl.mgr.hs.docker.util.service.DockerMachineEnv;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static pl.mgr.hs.docker.util.constant.Constants.*;
 
@@ -25,7 +23,8 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
       LoggerFactory.getLogger(DefaultDockerIntegrationService.class);
   private static final String EXCLUDE_MANAGER_PLACEMENT_CONSTRAINT = "node.role!=manager";
   private static final String LATEST_VERSION = "latest";
-  private static final String DEFAULT_LISTEN_ADDR = "0.0.0.0" + ":" + DEFAULT_SWARM_PORT;
+  private static final String DEFAULT_IP = "0.0.0.0";
+  private static final String DEFAULT_LISTEN_ADDR = DEFAULT_IP + ":" + DEFAULT_SWARM_PORT;
   private static final String SLICE_CLIENT_APP_KEY = "sliceClientApp";
 
   @Override
@@ -106,7 +105,7 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   public List<Container> getContainers(DockerMachineEnv machineEnv, boolean onlyRunningContainers) {
     try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
       return docker.listContainers(
-          onlyRunningContainers ? null : DockerClient.ListContainersParam.allContainers());
+          onlyRunningContainers ? null : ListContainersParam.allContainers());
 
     } catch (DockerException | InterruptedException e) {
 
@@ -214,19 +213,15 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
                               .labels(Collections.singletonMap(SLICE_CLIENT_APP_KEY, ""))
                               .image(imageId)
                               .build())
+                      .restartPolicy(
+                          RestartPolicy.builder()
+                              .condition(RestartPolicy.RESTART_POLICY_NONE)
+                              .build())
                       .placement(
                           Placement.create(
                               Collections.singletonList(EXCLUDE_MANAGER_PLACEMENT_CONSTRAINT)))
                       .build())
-              .endpointSpec(
-                  EndpointSpec.builder()
-                      .addPort(
-                          PortConfig.builder()
-                              .publishedPort(port)
-                              .targetPort(port)
-                              .protocol(PortConfig.PROTOCOL_TCP)
-                              .build())
-                      .build())
+              .endpointSpec(buildEndpointSpec(port))
               .build();
 
       docker.createService(serviceSpecification);
@@ -235,6 +230,11 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
       throw new DockerOperationException(
           String.format("Cannot create service on machine: %s", getHostAddress(machineEnv)), e);
     }
+  }
+
+  @Override
+  public void createSliceService(String imageId) {
+    createSliceService(null, imageId, null);
   }
 
   @Override
@@ -282,19 +282,30 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
 
   @Override
   public void createServerContainer(
-      DockerMachineEnv machineEnv, String imageId, Integer publishedPort) {
+      DockerMachineEnv machineEnv, String imageId, Integer publishedPort, List<String> command) {
     try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
       LOGGER.info("Creating container with image: {}....", imageId);
 
       String fullImageId = imageId + ":" + LATEST_VERSION;
 
       docker.pull(fullImageId);
-      docker.createContainer(
-          ContainerConfig.builder()
-              .image(fullImageId)
-              .exposedPorts(String.valueOf(publishedPort))
-              .build(),
-          SERVER_APP_ID);
+      List<PortBinding> hostPorts =
+          Collections.singletonList(PortBinding.of(DEFAULT_IP, String.valueOf(publishedPort)));
+
+      final Map<String, List<PortBinding>> portBindings =
+          Collections.singletonMap(String.valueOf(publishedPort), hostPorts);
+
+      ContainerCreation container =
+          docker.createContainer(
+              ContainerConfig.builder()
+                  .image(fullImageId)
+                  .exposedPorts(String.valueOf(publishedPort))
+                  .hostConfig(HostConfig.builder().portBindings(portBindings).build())
+                  .cmd(command)
+                  .build(),
+              SERVER_APP_ID);
+
+      docker.startContainer(container.id());
 
     } catch (DockerException | InterruptedException e) {
       throw new DockerOperationException(
@@ -306,8 +317,8 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   }
 
   @Override
-  public void createServerContainer(String imageId, Integer publishedPort) {
-    createServerContainer(null, imageId, publishedPort);
+  public void createServerContainer(String imageId, Integer publishedPort, List<String> command) {
+    createServerContainer(null, imageId, publishedPort, command);
   }
 
   @Override
@@ -333,7 +344,9 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
     try (DefaultDockerClient docker = createDockerConnection(null)) {
 
       List<Container> containers =
-          docker.listContainers(DockerClient.ListContainersParam.withLabel(SLICE_CLIENT_APP_KEY));
+          docker.listContainers(
+              ListContainersParam.allContainers(),
+              ListContainersParam.withLabel(SLICE_CLIENT_APP_KEY));
       if (containers.size() > 1) {
         throw new DockerOperationException(
             "Too many slice client application containers are obtained");
@@ -362,5 +375,20 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
 
   private String getHostAddress(DockerMachineEnv env) {
     return env == null ? "localhost" : env.getAddress().getHost();
+  }
+
+  private EndpointSpec buildEndpointSpec(Integer port) {
+    EndpointSpec.Builder builder = EndpointSpec.builder();
+
+    if (port != null) {
+      builder.addPort(
+          PortConfig.builder()
+              .publishedPort(port)
+              .targetPort(port)
+              .protocol(PortConfig.PROTOCOL_TCP)
+              .build());
+    }
+
+    return builder.build();
   }
 }

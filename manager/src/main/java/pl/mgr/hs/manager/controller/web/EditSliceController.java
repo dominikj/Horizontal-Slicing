@@ -69,7 +69,9 @@ public class EditSliceController {
     sliceForm.setName(slice.getName());
     sliceForm.setId(slice.getId());
     sliceForm.setDescription(slice.getDescription());
+
     sliceForm.setClientAppImageId(slice.getClientApplication().getImage().split(":")[0]);
+    sliceForm.setClientAppCommand(slice.getClientApplication().getCommand());
 
     List<Integer> clientPublishedPorts = slice.getClientApplication().getPublishedPorts();
     if (!clientPublishedPorts.isEmpty()) {
@@ -77,6 +79,7 @@ public class EditSliceController {
     }
 
     sliceForm.setServerAppImageId(slice.getServerApplication().getImage().split(":")[0]);
+    sliceForm.setServerAppCommand(slice.getServerApplication().getCommand());
 
     List<Integer> servPublishedPorts = slice.getServerApplication().getPublishedPorts();
     if (!servPublishedPorts.isEmpty()) {

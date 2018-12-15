@@ -16,6 +16,7 @@ import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
 import pl.mgr.hs.manager.dto.web.details.ApplicationDto;
 import pl.mgr.hs.manager.dto.web.details.HostDto;
 import pl.mgr.hs.manager.dto.web.details.SliceDetailsDto;
+import pl.mgr.hs.manager.entity.Application;
 import pl.mgr.hs.manager.entity.Slice;
 
 import java.util.Collections;
@@ -74,8 +75,8 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
     dto.setManagerHostAddressExternal(
         dockerMachineService.getExternalIpAddress(entity.getManagerHostName()));
     dto.setJoinToken(getJoinToken(machineEnv));
-    dto.setClientApplication(getClientApplication(machineEnv));
-    dto.setServerApplication(getServerApplication(machineEnv));
+    dto.setClientApplication(getClientApplication(machineEnv, entity.getClientApplication()));
+    dto.setServerApplication(getServerApplication(machineEnv, entity.getServerApplication()));
 
     return dto;
   }
@@ -106,7 +107,7 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
     return host;
   }
 
-  private ApplicationDto getClientApplication(DockerMachineEnv env) {
+  private ApplicationDto getClientApplication(DockerMachineEnv env, Application entity) {
     List<Service> services = dockerIntegrationService.getServices(env);
 
     if (services.size() != 1) {
@@ -128,10 +129,11 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
             .collect(Collectors.toList());
 
     app.setPublishedPorts(publishedPorts);
+    app.setCommand(entity.getCommand());
     return app;
   }
 
-  private ApplicationDto getServerApplication(DockerMachineEnv env) {
+  private ApplicationDto getServerApplication(DockerMachineEnv env, Application entity) {
     List<Container> containers = dockerIntegrationService.getContainers(env, false);
     ApplicationDto app = new ApplicationDto();
 
@@ -159,6 +161,7 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
             .collect(Collectors.toList());
 
     app.setPublishedPorts(publishedPorts);
+    app.setCommand(entity.getCommand());
     return app;
   }
 

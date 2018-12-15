@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.mgr.hs.manager.facade.SliceFacade;
+import pl.mgr.hs.manager.response.AttachCommandResponse;
 import pl.mgr.hs.manager.response.JoinTokenResponse;
 import pl.mgr.hs.manager.response.SliceListResponse;
 
@@ -30,5 +31,11 @@ public class SliceListRestController {
   public JoinTokenResponse getJoinToken(
       @RequestParam String hostId, @RequestParam Integer sliceId) {
     return new JoinTokenResponse(sliceFacade.getJoinToken(hostId, sliceId));
+  }
+
+  @GetMapping("/attach-command")
+  public AttachCommandResponse getAttachCommand(
+      @RequestParam String hostId, @RequestParam Integer sliceId) {
+    return new AttachCommandResponse(sliceFacade.getAttachCommandClientApplication(sliceId));
   }
 }
