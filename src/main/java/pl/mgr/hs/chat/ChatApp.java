@@ -1,5 +1,7 @@
 package pl.mgr.hs.chat;
 
+import java.util.Scanner;
+
 /** Created by dominik on 16.11.18. */
 public class ChatApp {
 
@@ -13,7 +15,7 @@ public class ChatApp {
 
   public static void main(String[] args) {
 
-    if (args.length < 3) {
+    if (args.length < 2) {
       showHelp();
       return;
     }
@@ -21,12 +23,22 @@ public class ChatApp {
     switch (args[MODE]) {
       case SERVER_MODE:
         {
+          if (args.length < 3) {
+            showHelp();
+            break;
+          }
           ChatServer.createServer(args[PORT], args[DESC]);
           break;
         }
       case CLIENT_MODE:
         {
-          ChatClient.createClient(args[IP_PORT], args[NICK]);
+          String nick;
+          if (args.length == 2) {
+            nick = getNick();
+          } else {
+            nick = args[NICK];
+          }
+          ChatClient.createClient(args[IP_PORT], nick);
           break;
         }
       default:
@@ -38,6 +50,11 @@ public class ChatApp {
 
   private static void showHelp() {
     System.out.println(
-        "chatApp [" + SERVER_MODE + "|" + CLIENT_MODE + "] [port|ip:port] [description|nick]");
+        "chatApp [" + SERVER_MODE + "|" + CLIENT_MODE + "] [port|ip:port] [description|nick] ");
+  }
+
+  private static String getNick() {
+    System.out.println("Nick:");
+    return new Scanner(System.in).nextLine();
   }
 }
