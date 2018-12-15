@@ -5,6 +5,7 @@ import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.glassfish.jersey.client.JerseyInvocation.Builder;
 import org.glassfish.jersey.client.JerseyWebTarget;
+import pl.mgr.hs.client.cli.rest.data.command.AttachCommandResponse;
 import pl.mgr.hs.client.cli.rest.data.slice.SliceData;
 import pl.mgr.hs.client.cli.rest.data.slice.SliceListResponse;
 import pl.mgr.hs.client.cli.rest.data.token.JoinTokenData;
@@ -26,6 +27,8 @@ public class SliceService {
   private static final String AVAILABLE_SLICES_URL = "http://%s/rest/slice/available?hostId=%s";
   private static final String JOIN_TOKEN_URL =
       "http://%s/rest/slice/join-token?hostId=%s&sliceId=%s";
+  private static final String ATTACH_COMMAND_URL =
+      "http://%s/rest/slice/attach-command?hostId=%s&sliceId=%s";
 
   public SliceListResponse getAvailableSlicesForHost(String hostId, String hostAddress) {
     return request(
@@ -48,12 +51,23 @@ public class SliceService {
     System.out.println("Disconnected from slice");
   }
 
-  public void attachToSliceApp() {
-    Container container =
-        integrationService
-            .getClientAppContainer()
-            .orElseThrow(() -> new RuntimeException("Cannot get client app container"));
-    cliService.attachToContainer(container.id());
+  public void attachToSliceApp(String sliceName, String hostId, String hostAddress) {
+    Optional<Integer> sliceId = getSliceId(hostId, hostAddress, sliceName);
+
+    if (sliceId.isPresent()) {
+      AttachCommandResponse response =
+          request(
+              AttachCommandResponse.class,
+              String.format(ATTACH_COMMAND_URL, hostAddress, hostId, sliceId.get()));
+
+      Container container =
+          integrationService
+              .getClientAppContainer()
+              .orElseThrow(() -> new RuntimeException("Cannot get client app container"));
+      cliService.startContainerInteractive(container.id(), response.getAttachCommand());
+      return;
+    }
+    System.out.println("Cannot attach to application");
   }
 
   private boolean joinToSliceInternal(String sliceName, String hostName, String hostAddress) {
@@ -78,22 +92,25 @@ public class SliceService {
 
   private Optional<JoinTokenResponse> getJoinTokenForSlice(
       String sliceName, String hostName, String hostAddress) {
+
+    return getSliceId(hostName, hostAddress, sliceName)
+        .map(
+            integer ->
+                request(
+                    JoinTokenResponse.class,
+                    String.format(JOIN_TOKEN_URL, hostAddress, hostName, integer)));
+  }
+
+  private Optional<Integer> getSliceId(String hostName, String hostAddress, String sliceName) {
     SliceListResponse list =
         request(
             SliceListResponse.class, String.format(AVAILABLE_SLICES_URL, hostAddress, hostName));
 
-    Optional<Integer> sliceId =
-        list.getSlices()
-            .stream()
-            .filter(sliceData -> sliceName.equals(sliceData.getName()))
-            .findFirst()
-            .map(SliceData::getId);
-
-    return sliceId.map(
-        integer ->
-            request(
-                JoinTokenResponse.class,
-                String.format(JOIN_TOKEN_URL, hostAddress, hostName, integer)));
+    return list.getSlices()
+        .stream()
+        .filter(sliceData -> sliceName.equals(sliceData.getName()))
+        .findFirst()
+        .map(SliceData::getId);
   }
 
   private <T> T request(Class<T> responseMappingClass, String url) {

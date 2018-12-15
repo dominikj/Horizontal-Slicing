@@ -39,6 +39,7 @@ public class ClientCli {
     SliceService sliceService = new SliceService();
     String[] input;
     String managerAddress = args[ADDRESS_ARG];
+    String connectedSlice = "";
 
     menu.showUsage();
 
@@ -63,20 +64,23 @@ public class ClientCli {
               break;
             }
             sliceService.joinToSlice(input[SLICE_NAME_PARAM], getHostName(), managerAddress);
+            connectedSlice = input[SLICE_NAME_PARAM];
             break;
           }
         case DISCONNECT_OPTION:
           {
             sliceService.disconnectFromSlice();
+            connectedSlice = "";
             break;
           }
         case SERVICE_OPTION:
           {
-            sliceService.attachToSliceApp();
+            sliceService.attachToSliceApp(connectedSlice, getHostName(), managerAddress);
             break;
           }
         case EXIT_OPTION:
           {
+            sliceService.disconnectFromSlice();
             return;
           }
         default:
