@@ -14,6 +14,7 @@ public class ChatClient extends Client {
   private static final int PAYLOAD = 1;
   private static final int IP_ADDRESS = 0;
   private static final int PORT = 1;
+  private static final String EXIT_COMMNAND = ":exit";
 
   private boolean initialMessageIsSent;
   private String nick;
@@ -67,6 +68,10 @@ public class ChatClient extends Client {
   private void chat() {
     while (!stopped) {
       String text = scanner.nextLine();
+      if (EXIT_COMMNAND.equals(text)) {
+        stop();
+        break;
+      }
       sendMessage(CLIENT_MESSAGE, gson.toJson(new Message(nick, text)));
     }
   }
