@@ -1,4 +1,4 @@
-package pl.mgr.hs.client.cli.rest;
+package pl.mgr.hs.client.cli;
 
 import com.spotify.docker.client.messages.Container;
 import org.glassfish.jersey.client.JerseyClient;

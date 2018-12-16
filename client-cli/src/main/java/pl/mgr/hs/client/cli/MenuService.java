@@ -1,4 +1,4 @@
-package pl.mgr.hs.client.cli.rest;
+package pl.mgr.hs.client.cli;
 
 import pl.mgr.hs.client.cli.rest.data.slice.SliceListResponse;
 

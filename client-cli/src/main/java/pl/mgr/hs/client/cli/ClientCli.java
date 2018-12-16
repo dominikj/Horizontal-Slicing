@@ -2,8 +2,6 @@ package pl.mgr.hs.client.cli;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.varia.NullAppender;
-import pl.mgr.hs.client.cli.rest.MenuService;
-import pl.mgr.hs.client.cli.rest.SliceService;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
