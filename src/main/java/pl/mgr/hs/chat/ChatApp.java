@@ -55,6 +55,7 @@ public class ChatApp {
 
   private static String getNick() {
     System.out.println("Nick:");
-    return new Scanner(System.in).nextLine();
+    Scanner scanner = new Scanner(System.in);
+    return scanner.nextLine();
   }
 }
