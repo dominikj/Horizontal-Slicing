@@ -66,7 +66,6 @@ public class DefaultSlicingDaemonService implements SlicingDaemonService {
           sliceService
               .getAllNodesForSlice(sliceName)
               .stream()
-              // TODO: DOWN_NODE_STATE
               .filter(node -> DOWN_NODE_STATE.equals(node.getState()))
               .filter(node -> !nodesScheduledToRemove.get(sliceName).contains(node))
               .collect(Collectors.toList());

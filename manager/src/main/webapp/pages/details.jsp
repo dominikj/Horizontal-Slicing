@@ -123,8 +123,10 @@
                                                 <dl>
                                                     <dt>Docker image</dt>
                                                     <dd>${slice.clientApplication.image}</dd>
-                                                    <dt>Published ports</dt>
+                                                    <dt>Exposed ports</dt>
                                                     <dd>${slice.clientApplication.publishedPorts}</dd>
+                                                    <dt>Command</dt>
+                                                    <dd>${slice.clientApplication.command}</dd>
                                                 </dl>
                                             </div>
                                         </div>
@@ -139,8 +141,8 @@
                                                     <dd>${slice.serverApplication.image}</dd>
                                                     <dt>Exposed ports</dt>
                                                     <dd>${slice.serverApplication.publishedPorts}</dd>
-                                                    <dt>Status</dt>
-                                                    <dd>${slice.serverApplication.status}</dd>
+                                                    <dt>Command</dt>
+                                                    <dd>${slice.serverApplication.command}</dd>
                                                 </dl>
                                             </div>
                                         </div>

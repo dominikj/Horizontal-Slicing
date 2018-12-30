@@ -1,6 +1,5 @@
 package pl.mgr.hs.manager.converter;
 
-import com.spotify.docker.client.messages.Container;
 import com.spotify.docker.client.messages.swarm.Node;
 import com.spotify.docker.client.messages.swarm.PortConfig;
 import com.spotify.docker.client.messages.swarm.Service;
@@ -21,17 +20,16 @@ import pl.mgr.hs.manager.entity.Slice;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static pl.mgr.hs.docker.util.constant.Constants.SERVER_APP_ID;
+import static pl.mgr.hs.manager.constant.Constants.ServiceIds.CLIENT_APP_SERVICE_ID;
+import static pl.mgr.hs.manager.constant.Constants.ServiceIds.SERVER_APP_SERVICE_ID;
 
 /** Created by dominik on 24.10.18. */
 @Component
 public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice> {
   private static final Logger LOGGER = LoggerFactory.getLogger(DetailsSliceConverter.class);
 
-  private static final String SERVER_APP_CONTAINER_NAME = "\\S+" + SERVER_APP_ID;
   private static final String SHUTDOWN_DESIRED_STATE = "shutdown";
   private final DockerMachineService dockerMachineService;
   private final DockerIntegrationService dockerIntegrationService;
@@ -75,8 +73,10 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
     dto.setManagerHostAddressExternal(
         dockerMachineService.getExternalIpAddress(entity.getManagerHostName()));
     dto.setJoinToken(getJoinToken(machineEnv));
-    dto.setClientApplication(getClientApplication(machineEnv, entity.getClientApplication()));
-    dto.setServerApplication(getServerApplication(machineEnv, entity.getServerApplication()));
+    dto.setClientApplication(
+        getApplication(machineEnv, entity.getClientApplication(), CLIENT_APP_SERVICE_ID));
+    dto.setServerApplication(
+        getApplication(machineEnv, entity.getServerApplication(), SERVER_APP_SERVICE_ID));
 
     return dto;
   }
@@ -107,15 +107,24 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
     return host;
   }
 
-  private ApplicationDto getClientApplication(DockerMachineEnv env, Application entity) {
+  private ApplicationDto getApplication(
+      DockerMachineEnv env, Application entity, String serviceId) {
     List<Service> services = dockerIntegrationService.getServices(env);
-
-    if (services.size() != 1) {
+    if (services.isEmpty()) {
       throw new IllegalStateException(
-          String.format("One service expected on machine: %s", env.getAddress()));
+          String.format("No services on machine: %s", env.getAddress()));
     }
     ApplicationDto app = new ApplicationDto();
-    Service service = services.get(0);
+    Service service =
+        services
+            .stream()
+            .filter(serv -> serviceId.equals(serv.spec().name()))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        String.format(
+                            "No service %s on machine: %s", serviceId, env.getAddress())));
 
     app.setImage(service.spec().taskTemplate().containerSpec().image());
 
@@ -126,38 +135,6 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
             .ports()
             .stream()
             .map(PortConfig::publishedPort)
-            .collect(Collectors.toList());
-
-    app.setPublishedPorts(publishedPorts);
-    app.setCommand(entity.getCommand());
-    return app;
-  }
-
-  private ApplicationDto getServerApplication(DockerMachineEnv env, Application entity) {
-    List<Container> containers = dockerIntegrationService.getContainers(env, false);
-    ApplicationDto app = new ApplicationDto();
-
-    Predicate<String> isServerAppContainerName =
-        (String name) -> name.matches(SERVER_APP_CONTAINER_NAME);
-    Container serverContainer =
-        containers
-            .stream()
-            .filter(container -> container.names().stream().anyMatch(isServerAppContainerName))
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        String.format(
-                            "Server application container not found on host: %s",
-                            env.getAddress())));
-
-    app.setImage(serverContainer.image());
-    app.setStatus(serverContainer.status());
-    List<Integer> publishedPorts =
-        serverContainer
-            .ports()
-            .stream()
-            .map((Container.PortMapping::publicPort))
             .collect(Collectors.toList());
 
     app.setPublishedPorts(publishedPorts);

@@ -9,6 +9,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
@@ -22,8 +25,10 @@ import pl.mgr.hs.manager.interceptor.VersionInterceptor;
 
 @Configuration
 @EnableScheduling
+@EnableWebSecurity
 @PropertySource("classpath:pass.properties")
-public class ManagerConfiguration implements WebMvcConfigurer, SchedulingConfigurer {
+public class ManagerConfiguration extends WebSecurityConfigurerAdapter
+    implements WebMvcConfigurer, SchedulingConfigurer {
 
   @Value("${app.name}")
   private String appName;
@@ -44,8 +49,9 @@ public class ManagerConfiguration implements WebMvcConfigurer, SchedulingConfigu
 
   @Bean
   public DockerMachineService dockerMachineService(
-      @Value("${local.sudo.password}") String sudoPassword) {
-    return new DefaultDockerMachineService(sudoPassword);
+      @Value("${local.sudo.password}") String sudoPassword,
+      @Value("${slice.machine.image.boot2Docker.url}") String boot2DockerUrl) {
+    return new DefaultDockerMachineService(sudoPassword, boot2DockerUrl);
   }
 
   @Bean
@@ -78,5 +84,17 @@ public class ManagerConfiguration implements WebMvcConfigurer, SchedulingConfigu
     ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
     scheduler.setPoolSize(schedulerPoolSize);
     return scheduler;
+  }
+
+  @Override
+  protected void configure(HttpSecurity http) throws Exception {
+    http.authorizeRequests()
+        // FIXME
+        .antMatchers("/rest/slice/*")
+        .permitAll()
+        .anyRequest()
+        .authenticated()
+        .and()
+        .httpBasic();
   }
 }

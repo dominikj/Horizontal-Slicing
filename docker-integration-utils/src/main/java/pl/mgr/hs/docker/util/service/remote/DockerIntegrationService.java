@@ -48,28 +48,25 @@ public interface DockerIntegrationService {
 
   void initSwarm(String advertiseAddress);
 
-  void createSliceService(DockerMachineEnv machineEnv, String imageId, Integer port);
+  void createSliceService(DockerMachineEnv machineEnv, ServiceDockerSpec spec);
 
-  void createSliceService(String imageId);
+  void createSliceService(ServiceDockerSpec spec);
 
-  void createSliceService(String imageId, Integer port);
+  void removeContainer(DockerMachineEnv machineEnv, String containerName);
 
-  void removeServerContainer(DockerMachineEnv machineEnv);
+  void removeContainer(String containerName);
 
-  void removeServerContainer();
+  void restartContainer(DockerMachineEnv machineEnv, String containerName);
 
-  void restartServerContainer(DockerMachineEnv machineEnv);
+  void restartContainer(String containerName);
 
-  void restartServerContainer();
-
-  void createServerContainer(
-      DockerMachineEnv machineEnv, String imageId, Integer publishedPort, List<String> command);
-
-  void createServerContainer(String imageId, Integer publishedPort, List<String> command);
+  void createContainer(DockerMachineEnv machineEnv, ContainerDockerSpec spec);
 
   void rotateWorkerJoinToken(DockerMachineEnv machineEnv);
 
   void rotateWorkerJoinToken();
 
-  Optional<Container> getClientAppContainer();
+  void createOverlayNetwork(DockerMachineEnv machineEnv, String subnet, String networkName);
+
+  Optional<Container> getContainerForLabel(String containerName);
 }

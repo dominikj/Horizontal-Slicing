@@ -1,5 +1,6 @@
 package pl.mgr.hs.docker.util.service.remote;
 
+import com.google.common.collect.ImmutableList;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
@@ -7,25 +8,28 @@ import com.spotify.docker.client.DockerClient.ListContainersParam;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.*;
+import com.spotify.docker.client.messages.IpamConfig;
 import com.spotify.docker.client.messages.swarm.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.mgr.hs.docker.util.exception.DockerOperationException;
 import pl.mgr.hs.docker.util.service.DockerMachineEnv;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
-import static pl.mgr.hs.docker.util.constant.Constants.*;
+import static pl.mgr.hs.docker.util.constant.Constants.DEFAULT_SWARM_PORT;
+import static pl.mgr.hs.docker.util.constant.Constants.WORKER_ROLE;
 
 /** Created by dominik on 24.10.18. */
 public class DefaultDockerIntegrationService implements DockerIntegrationService {
   private static final Logger LOGGER =
       LoggerFactory.getLogger(DefaultDockerIntegrationService.class);
-  private static final String EXCLUDE_MANAGER_PLACEMENT_CONSTRAINT = "node.role!=manager";
-  private static final String LATEST_VERSION = "latest";
   private static final String DEFAULT_IP = "0.0.0.0";
   private static final String DEFAULT_LISTEN_ADDR = DEFAULT_IP + ":" + DEFAULT_SWARM_PORT;
-  private static final String SLICE_CLIENT_APP_KEY = "sliceClientApp";
+  private static final String OVERLAY_DRIVER = "overlay";
+  private static final String DEFAULT_IPAM_DRIVER = "default";
 
   @Override
   public List<Node> getNodes(DockerMachineEnv machineEnv) {
@@ -199,29 +203,30 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   }
 
   @Override
-  public void createSliceService(DockerMachineEnv machineEnv, String imageId, Integer port) {
+  public void createSliceService(DockerMachineEnv machineEnv, ServiceDockerSpec spec) {
     try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
-      LOGGER.info("Creating service with image: {}....", imageId);
+      LOGGER.info("Creating service with image: {}....", spec.getImageId());
       ServiceSpec serviceSpecification =
           ServiceSpec.builder()
               .mode(ServiceMode.withGlobal())
-              .name(SLICE_SERVICE_NAME)
+              .name(spec.getServiceName())
+              .networks(spec.getNetworkAttachmentConfig())
               .taskTemplate(
                   TaskSpec.builder()
                       .containerSpec(
                           ContainerSpec.builder()
-                              .labels(Collections.singletonMap(SLICE_CLIENT_APP_KEY, ""))
-                              .image(imageId)
+                              .labels(Collections.singletonMap(spec.getServiceName(), ""))
+                              .image(spec.getImageId())
+                              .tty(spec.isCreateVirtualTerminal())
+                              .command(spec.getCommand())
                               .build())
                       .restartPolicy(
-                          RestartPolicy.builder()
-                              .condition(RestartPolicy.RESTART_POLICY_NONE)
-                              .build())
+                          RestartPolicy.builder().condition(spec.getRestartPolicy()).build())
                       .placement(
                           Placement.create(
-                              Collections.singletonList(EXCLUDE_MANAGER_PLACEMENT_CONSTRAINT)))
+                              Collections.singletonList(spec.getPlacementConstraint())))
                       .build())
-              .endpointSpec(buildEndpointSpec(port))
+              .endpointSpec(spec.getEndpointSpec())
               .build();
 
       docker.createService(serviceSpecification);
@@ -233,19 +238,14 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   }
 
   @Override
-  public void createSliceService(String imageId) {
-    createSliceService(null, imageId, null);
+  public void createSliceService(ServiceDockerSpec spec) {
+    createSliceService(null, spec);
   }
 
   @Override
-  public void createSliceService(String imageId, Integer port) {
-    createSliceService(null, imageId, port);
-  }
-
-  @Override
-  public void removeServerContainer(DockerMachineEnv machineEnv) {
+  public void removeContainer(DockerMachineEnv machineEnv, String containerName) {
     try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
-      docker.removeContainer(SERVER_APP_ID, DockerClient.RemoveContainerParam.forceKill());
+      docker.removeContainer(containerName, DockerClient.RemoveContainerParam.forceKill());
 
     } catch (DockerException | InterruptedException e) {
       throw new DockerOperationException(
@@ -257,14 +257,14 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   }
 
   @Override
-  public void removeServerContainer() {
-    removeServerContainer(null);
+  public void removeContainer(String containerName) {
+    removeContainer(null, containerName);
   }
 
   @Override
-  public void restartServerContainer(DockerMachineEnv machineEnv) {
+  public void restartContainer(DockerMachineEnv machineEnv, String containerName) {
     try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
-      docker.restartContainer(SERVER_APP_ID);
+      docker.restartContainer(containerName);
 
     } catch (DockerException | InterruptedException e) {
       throw new DockerOperationException(
@@ -276,49 +276,35 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   }
 
   @Override
-  public void restartServerContainer() {
-    removeServerContainer(null);
+  public void restartContainer(String containerName) {
+    removeContainer(null, containerName);
   }
 
   @Override
-  public void createServerContainer(
-      DockerMachineEnv machineEnv, String imageId, Integer publishedPort, List<String> command) {
+  public void createContainer(DockerMachineEnv machineEnv, ContainerDockerSpec spec) {
     try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
-      LOGGER.info("Creating container with image: {}....", imageId);
+      LOGGER.info("Creating container with image: {}....", spec.getImageId());
 
-      String fullImageId = imageId + ":" + LATEST_VERSION;
-
-      docker.pull(fullImageId);
-      List<PortBinding> hostPorts =
-          Collections.singletonList(PortBinding.of(DEFAULT_IP, String.valueOf(publishedPort)));
-
-      final Map<String, List<PortBinding>> portBindings =
-          Collections.singletonMap(String.valueOf(publishedPort), hostPorts);
+      docker.pull(spec.getImageId());
 
       ContainerCreation container =
           docker.createContainer(
               ContainerConfig.builder()
-                  .image(fullImageId)
-                  .exposedPorts(String.valueOf(publishedPort))
-                  .hostConfig(HostConfig.builder().portBindings(portBindings).build())
-                  .cmd(command)
+                  .image(spec.getImageId())
+                  .exposedPorts(spec.getPublishedPort())
+                  .hostConfig(HostConfig.builder().portBindings(spec.getPortBindings()).build())
+                  .cmd(spec.getCommand())
                   .build(),
-              SERVER_APP_ID);
+              spec.getName());
 
       docker.startContainer(container.id());
 
     } catch (DockerException | InterruptedException e) {
       throw new DockerOperationException(
           String.format(
-              "Cannot create server application container on machine: %s",
-              getHostAddress(machineEnv)),
+              "Cannot create application container on machine: %s", getHostAddress(machineEnv)),
           e);
     }
-  }
-
-  @Override
-  public void createServerContainer(String imageId, Integer publishedPort, List<String> command) {
-    createServerContainer(null, imageId, publishedPort, command);
   }
 
   @Override
@@ -340,20 +326,45 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   }
 
   @Override
-  public Optional<Container> getClientAppContainer() {
+  public Optional<Container> getContainerForLabel(String containerlabel) {
     try (DefaultDockerClient docker = createDockerConnection(null)) {
 
       List<Container> containers =
           docker.listContainers(
-              ListContainersParam.allContainers(),
-              ListContainersParam.withLabel(SLICE_CLIENT_APP_KEY));
+              ListContainersParam.allContainers(), ListContainersParam.withLabel(containerlabel));
       if (containers.size() > 1) {
         throw new DockerOperationException(
             "Too many slice client application containers are obtained");
       }
+      if (containers.size() == 0) {
+        return Optional.empty();
+      }
+
       return Optional.of(containers.get(0));
     } catch (DockerException | InterruptedException e) {
       throw new DockerOperationException("Cannot get container");
+    }
+  }
+
+  @Override
+  public void createOverlayNetwork(DockerMachineEnv machineEnv, String subnet, String networkName) {
+    try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
+
+      docker.createNetwork(
+          NetworkConfig.builder()
+              .name(networkName)
+              .driver(OVERLAY_DRIVER)
+              .ipam(
+                  Ipam.builder()
+                      .config(ImmutableList.of(IpamConfig.create(subnet, subnet, "")))
+                      .driver(DEFAULT_IPAM_DRIVER)
+                      .build())
+              .build());
+
+    } catch (DockerException | InterruptedException e) {
+      throw new DockerOperationException(
+          String.format("Cannot create overlay network on machine: %s", getHostAddress(machineEnv)),
+          e);
     }
   }
 
@@ -375,20 +386,5 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
 
   private String getHostAddress(DockerMachineEnv env) {
     return env == null ? "localhost" : env.getAddress().getHost();
-  }
-
-  private EndpointSpec buildEndpointSpec(Integer port) {
-    EndpointSpec.Builder builder = EndpointSpec.builder();
-
-    if (port != null) {
-      builder.addPort(
-          PortConfig.builder()
-              .publishedPort(port)
-              .targetPort(port)
-              .protocol(PortConfig.PROTOCOL_TCP)
-              .build());
-    }
-
-    return builder.build();
   }
 }

@@ -22,8 +22,6 @@ public class DefaultDockerMachineService extends CliExecutorService
   private static final String STOP_MACHINE_COMMAND = "docker-machine stop %s";
   private static final String REGENERATE_CERTS_COMMAND = "docker-machine regenerate-certs -f %s";
   private static final String GET_EXTERNAL_IP_COMMAND = "docker-machine ssh %s ifconfig eth2";
-  // FIXME
-  private static final String BOOT2DOCKER_IMAGE_URL = "/opt/docker-images/boot2docker.iso";
   private static final String CREATE_MACHINE_COMMAND =
       "docker-machine create -d virtualbox --virtualbox-boot2docker-url %s %s";
   private static final String GET_ENV_COMMAND = "docker-machine env %s";
@@ -45,16 +43,16 @@ public class DefaultDockerMachineService extends CliExecutorService
   private static final String SUCCESS_GET_EXTERNAL_IP = "^.+:\\d+.\\d+.\\d+.\\d+.+";
   private static final int IP_ADDRESS = 2;
   private final String sudoPassword;
+  private final String boot2DockerImageUrl;
 
-  public DefaultDockerMachineService(String sudoPassword) {
+  public DefaultDockerMachineService(String sudoPassword, String boot2DockerImageUrl) {
     this.sudoPassword = sudoPassword;
+    this.boot2DockerImageUrl = boot2DockerImageUrl;
   }
 
   @Override
   public DockerMachineStatus getMachineStatus(String name) {
     try {
-      //            Temporary disabled
-      //            setupSudoCredentials(sudoPassword);
       Result result =
           executeCommand(
               String.format(CHECK_STATE_COMMAND, name), this::createResultForMachineListSearch);
@@ -120,7 +118,7 @@ public class DefaultDockerMachineService extends CliExecutorService
   public void createNewMachine(String name) {
     Result result =
         executeCommand(
-            String.format(CREATE_MACHINE_COMMAND, BOOT2DOCKER_IMAGE_URL, name),
+            String.format(CREATE_MACHINE_COMMAND, boot2DockerImageUrl, name),
             this::createResultForCreateMachine);
 
     if (result.isFailure()) {

@@ -9,4 +9,9 @@ public interface Constants {
     String DETAILS = PAGES + "/details";
     String DASHBOARD = PAGES + "/index";
   }
+
+  interface ServiceIds {
+    String CLIENT_APP_SERVICE_ID = "clientApp";
+    String SERVER_APP_SERVICE_ID = "serverApp";
+  }
 }
