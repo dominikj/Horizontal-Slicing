@@ -1,4 +1,4 @@
-package pl.mgr.hs.client.cli.rest.data.token;
+package pl.mgr.hs.client.cli.rest.data.joindata;
 
 import lombok.Data;
 

@@ -78,7 +78,9 @@ public class ClientCli {
           }
         case EXIT_OPTION:
           {
-            sliceService.disconnectFromSlice();
+            if (!"".equals(connectedSlice)) {
+              sliceService.disconnectFromSlice();
+            }
             return;
           }
         default:
