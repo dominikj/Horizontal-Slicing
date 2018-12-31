@@ -12,13 +12,14 @@ public class DefaultVirtualboxService extends CliExecutorService implements Virt
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultVirtualboxService.class);
 
   private static final String SET_BRIDGED_ADAPTER_TO_WLAN_COMMAND =
-      "VBoxManage modifyvm %s --nic3 bridged --nictype3 82545EM --bridgeadapter3 wlan0";
+      "VBoxManage modifyvm %s --nic3 bridged --nictype3 82545EM --bridgeadapter3 %s";
 
   @Override
-  public void createBridgedAdapterForMachine(String machineName) {
+  public void createBridgedAdapterToInterfaceForMachine(
+      String machineName, String physicalInterface) {
     Result result =
         executeCommand(
-            String.format(SET_BRIDGED_ADAPTER_TO_WLAN_COMMAND, machineName),
+            String.format(SET_BRIDGED_ADAPTER_TO_WLAN_COMMAND, machineName, physicalInterface),
             this::createResultForSetBridgedAdapter);
 
     if (result.isFailure()) {

@@ -3,4 +3,4 @@
 .idea/
 *.iml
 */target/
-pass.properties
+*.local

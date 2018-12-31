@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pl.mgr.hs.docker.util.exception.DockerOperationException;
 import pl.mgr.hs.docker.util.service.DockerMachineEnv;
@@ -54,6 +55,9 @@ public class DefaultSliceService implements SliceService {
   private final DockerIntegrationService dockerIntegrationService;
   private final DockerMachineService dockerMachineService;
   private final VirtualboxService virtualboxService;
+
+  @Value("${slice.interface.physical.internet}")
+  private String physicalInternetInterface;
 
   @Autowired
   public DefaultSliceService(
@@ -241,7 +245,8 @@ public class DefaultSliceService implements SliceService {
 
     dockerMachineService.createNewMachine(machineName);
     dockerMachineService.stopMachine(machineName);
-    virtualboxService.createBridgedAdapterForMachine(machineName);
+    virtualboxService.createBridgedAdapterToInterfaceForMachine(
+        machineName, physicalInternetInterface);
     dockerMachineService.restartMachine(machineName);
 
     String externalIpAddress = dockerMachineService.getExternalIpAddress(machineName);
