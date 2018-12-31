@@ -7,6 +7,7 @@ import pl.mgr.hs.manager.dto.rest.JoinTokenDto;
 /** Created by dominik on 14.11.18. */
 @AllArgsConstructor
 @Data
-public class JoinTokenResponse {
+public class JoinDataResponse {
   private JoinTokenDto tokenDto;
+  private String attachCommand;
 }

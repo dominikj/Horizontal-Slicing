@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import static pl.mgr.hs.docker.util.constant.Constants.UNKNOWN_NODE_STATE;
 import static pl.mgr.hs.manager.constant.Constants.ServiceIds.CLIENT_APP_SERVICE_ID;
 import static pl.mgr.hs.manager.constant.Constants.ServiceIds.SERVER_APP_SERVICE_ID;
+import static pl.mgr.hs.manager.constant.Constants.overlayNetwork.SUBNET;
 
 /** Created by dominik on 20.10.18. */
 @Service
@@ -45,8 +46,7 @@ public class DefaultSliceService implements SliceService {
   private static final String MASTER_POSTFIX = "-master";
   private static final int MACHINE_ID_LENGTH = 20;
   private static final String SH_COMMAND = "/bin/sh";
-  private static final String MANAGER_ADDRESS_VARIABLE = "${MANAGER_ADDRESS}";
-  private static final String SUBNET = "172.20.0.0/24";
+  private static final String SERVER_APP_ADDRESS_VARIABLE = "${SERVER_APP_ADDRESS}";
   private static final String OVERLAY_NETWORK_ALIAS = "overlay";
   private final SliceRepository sliceRepository;
   private final SliceListConverter sliceListConverter;
@@ -229,10 +229,12 @@ public class DefaultSliceService implements SliceService {
 
   @Override
   public String getAttachCommandClientApplication(int sliceId) {
-    Slice slice = getSliceFromRepository(sliceId);
+    SliceDetailsDto slice = sliceDetailsConverter.createDto(getSliceFromRepository(sliceId));
+
     return CommandUtil.replaceVariablesInCommand(
         slice.getClientApplication().getCommand(),
-        Collections.singletonMap(MANAGER_ADDRESS_VARIABLE, slice.getManagerHostName()));
+        Collections.singletonMap(
+            SERVER_APP_ADDRESS_VARIABLE, slice.getServerApplication().getIpAddress()));
   }
 
   private void createDockerEnvironmentForSlice(String machineName, NewSliceForm sliceForm) {
@@ -363,12 +365,13 @@ public class DefaultSliceService implements SliceService {
             .image(serverAppImageId)
             .publishPort(serverAppPublishedPort)
             .excludeWorkersFromPlacement()
+            .restartOnFailure()
             .attachNetwork(OVERLAY_NETWORK_ALIAS)
             .name(SERVER_APP_SERVICE_ID)
             .command(
                 command,
                 Collections.singletonMap(
-                    MANAGER_ADDRESS_VARIABLE,
+                    SERVER_APP_ADDRESS_VARIABLE,
                     dockerMachineService.getExternalIpAddress(machineName)))
             .build();
 

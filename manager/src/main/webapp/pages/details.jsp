@@ -141,6 +141,8 @@
                                                     <dd>${slice.serverApplication.image}</dd>
                                                     <dt>Exposed ports</dt>
                                                     <dd>${slice.serverApplication.publishedPorts}</dd>
+                                                    <dt>Address</dt>
+                                                    <dd>${slice.serverApplication.ipAddress}</dd>
                                                     <dt>Command</dt>
                                                     <dd>${slice.serverApplication.command}</dd>
                                                 </dl>

@@ -1,9 +1,6 @@
 package pl.mgr.hs.manager.converter;
 
-import com.spotify.docker.client.messages.swarm.Node;
-import com.spotify.docker.client.messages.swarm.PortConfig;
-import com.spotify.docker.client.messages.swarm.Service;
-import com.spotify.docker.client.messages.swarm.Task;
+import com.spotify.docker.client.messages.swarm.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +21,7 @@ import java.util.stream.Collectors;
 
 import static pl.mgr.hs.manager.constant.Constants.ServiceIds.CLIENT_APP_SERVICE_ID;
 import static pl.mgr.hs.manager.constant.Constants.ServiceIds.SERVER_APP_SERVICE_ID;
+import static pl.mgr.hs.manager.constant.Constants.overlayNetwork.OVERLAY_NETWORK_MASK;
 
 /** Created by dominik on 24.10.18. */
 @Component
@@ -31,6 +29,7 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
   private static final Logger LOGGER = LoggerFactory.getLogger(DetailsSliceConverter.class);
 
   private static final String SHUTDOWN_DESIRED_STATE = "shutdown";
+  private static final int IP_ADDRESS = 0;
   private final DockerMachineService dockerMachineService;
   private final DockerIntegrationService dockerIntegrationService;
 
@@ -139,7 +138,21 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
 
     app.setPublishedPorts(publishedPorts);
     app.setCommand(entity.getCommand());
+
+    service
+        .endpoint()
+        .virtualIps()
+        .stream()
+        // FIXME
+        .filter(virtualIp -> virtualIp.addr().contains(OVERLAY_NETWORK_MASK))
+        .findFirst()
+        .ifPresent(endpointVirtualIp -> app.setIpAddress(getOnlyIpAddress(endpointVirtualIp)));
+
     return app;
+  }
+
+  private String getOnlyIpAddress(EndpointVirtualIp endpointVirtualIp) {
+    return endpointVirtualIp.addr().split(OVERLAY_NETWORK_MASK)[IP_ADDRESS];
   }
 
   private SliceDetailsDto convertFromStaticConfiguration(Slice slice, SliceDetailsDto dto) {

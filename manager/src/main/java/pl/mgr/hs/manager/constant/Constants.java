@@ -14,4 +14,9 @@ public interface Constants {
     String CLIENT_APP_SERVICE_ID = "clientApp";
     String SERVER_APP_SERVICE_ID = "serverApp";
   }
+
+  interface overlayNetwork {
+    String OVERLAY_NETWORK_MASK = "/24";
+    String SUBNET = "172.20.0.0" + OVERLAY_NETWORK_MASK;
+  }
 }

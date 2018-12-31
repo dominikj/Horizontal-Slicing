@@ -10,4 +10,5 @@ public class ApplicationDto {
   private String image;
   private List<Integer> publishedPorts;
   private String command;
+  private String ipAddress;
 }
