@@ -48,6 +48,7 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
     dto.setManagerHostName(entity.getManagerHostName());
     dto.setName(entity.getName());
     dto.setDescription(entity.getDescription());
+    dto.setManagerHostExternalPort(entity.getExternalPort());
 
     DockerMachineStatus machineStatus =
         dockerMachineService.getMachineStatus(entity.getManagerHostName());
@@ -69,8 +70,6 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
     dto.setHosts(hosts);
 
     dto.setManagerHostAddressInternal(machineEnv.getAddress().getHost());
-    dto.setManagerHostAddressExternal(
-        dockerMachineService.getExternalIpAddress(entity.getManagerHostName()));
     dto.setJoinToken(getJoinToken(machineEnv));
     dto.setClientApplication(
         getApplication(machineEnv, entity.getClientApplication(), CLIENT_APP_SERVICE_ID));

@@ -10,6 +10,7 @@ import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pl.mgr.hs.docker.util.exception.CliAsyncExecutionException;
 import pl.mgr.hs.docker.util.util.CollectingLogOutputStream;
 
 import java.io.ByteArrayInputStream;
@@ -41,9 +42,26 @@ public abstract class CliExecutorService {
     DefaultExecutor exec = new DefaultExecutor();
     PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
     exec.setStreamHandler(streamHandler);
-
     execute(exec, commandline);
     return resultCreator.create(outputStream.getLines());
+  }
+
+  protected Thread executeCommandAsync(
+      String command, ResultCreator resultCreator, Thread.UncaughtExceptionHandler handler) {
+
+    Thread thread =
+        new Thread(
+            () -> {
+              Result result = executeCommand(command, resultCreator);
+              if (result.isFailure()) {
+                throw new CliAsyncExecutionException();
+              }
+            });
+
+    thread.setUncaughtExceptionHandler(handler);
+    thread.start();
+
+    return thread;
   }
 
   protected void executeCommandInteractive(String command) {

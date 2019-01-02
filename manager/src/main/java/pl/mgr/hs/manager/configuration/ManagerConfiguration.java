@@ -19,6 +19,8 @@ import pl.mgr.hs.docker.util.service.machine.DefaultDockerMachineService;
 import pl.mgr.hs.docker.util.service.machine.DockerMachineService;
 import pl.mgr.hs.docker.util.service.remote.DefaultDockerIntegrationService;
 import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
+import pl.mgr.hs.docker.util.service.ssh.DefaultSSHService;
+import pl.mgr.hs.docker.util.service.ssh.SSHService;
 import pl.mgr.hs.docker.util.service.virtualbox.DefaultVirtualboxService;
 import pl.mgr.hs.docker.util.service.virtualbox.VirtualboxService;
 import pl.mgr.hs.manager.interceptor.VersionInterceptor;
@@ -67,6 +69,11 @@ public class ManagerConfiguration extends WebSecurityConfigurerAdapter
   @Bean
   public VersionInterceptor versionInterceptor() {
     return new VersionInterceptor(appName, appVersion);
+  }
+
+  @Bean
+  public SSHService sshService() {
+    return new DefaultSSHService();
   }
 
   @Override

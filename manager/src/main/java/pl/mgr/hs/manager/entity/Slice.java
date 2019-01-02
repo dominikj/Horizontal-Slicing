@@ -17,6 +17,8 @@ public class Slice {
 
   private String managerHostName;
 
+  private int externalPort;
+
   @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
   private Application clientApplication;
 

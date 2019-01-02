@@ -2,8 +2,10 @@ package pl.mgr.hs.manager.service;
 
 import com.google.common.collect.Lists;
 import com.spotify.docker.client.messages.swarm.Node;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +17,6 @@ import pl.mgr.hs.docker.util.service.DockerMachineEnv;
 import pl.mgr.hs.docker.util.service.machine.DockerMachineService;
 import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
 import pl.mgr.hs.docker.util.service.remote.ServiceDockerSpec;
-import pl.mgr.hs.docker.util.service.virtualbox.VirtualboxService;
 import pl.mgr.hs.docker.util.util.CommandUtil;
 import pl.mgr.hs.manager.converter.GenericConverter;
 import pl.mgr.hs.manager.converter.SliceListConverter;
@@ -28,7 +29,9 @@ import pl.mgr.hs.manager.entity.Application;
 import pl.mgr.hs.manager.entity.Slice;
 import pl.mgr.hs.manager.form.NewSliceForm;
 import pl.mgr.hs.manager.repository.SliceRepository;
+import pl.mgr.hs.manager.service.tunnel.SSHTunnelService;
 
+import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -49,15 +52,21 @@ public class DefaultSliceService implements SliceService {
   private static final String SH_COMMAND = "/bin/sh";
   private static final String SERVER_APP_ADDRESS_VARIABLE = "${SERVER_APP_ADDRESS}";
   private static final String OVERLAY_NETWORK_ALIAS = "overlay";
+  private static final int PORT_RANGE = 100;
+  private static final int MIN_EXTERNAL_PORT = 9000;
+  private static final int MAX_SLICES = 100;
   private final SliceRepository sliceRepository;
   private final SliceListConverter sliceListConverter;
   private final GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter;
   private final DockerIntegrationService dockerIntegrationService;
   private final DockerMachineService dockerMachineService;
-  private final VirtualboxService virtualboxService;
+  private final SSHTunnelService sshTunnelService;
 
   @Value("${slice.interface.physical.internet}")
   private String physicalInternetInterface;
+
+  @Value("${local.host.ip.address}")
+  private String physicalHostIpAddress;
 
   @Autowired
   public DefaultSliceService(
@@ -67,14 +76,19 @@ public class DefaultSliceService implements SliceService {
           GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter,
       DockerIntegrationService dockerIntegrationService,
       DockerMachineService dockerMachineService,
-      VirtualboxService virtualboxService) {
+      SSHTunnelService sshTunnelService) {
 
     this.sliceRepository = sliceRepository;
     this.sliceListConverter = sliceListConverter;
     this.sliceDetailsConverter = sliceDetailsConverter;
     this.dockerIntegrationService = dockerIntegrationService;
     this.dockerMachineService = dockerMachineService;
-    this.virtualboxService = virtualboxService;
+    this.sshTunnelService = sshTunnelService;
+  }
+
+  @PostConstruct
+  public void recreateTunnelsAfterRestart() {
+    sliceRepository.findAll().forEach(sshTunnelService::createTunnelForSlice);
   }
 
   @Override
@@ -99,6 +113,7 @@ public class DefaultSliceService implements SliceService {
     if (machineEnv.isPresent()) {
       removeNodesInternal(machineEnv.get());
       dockerMachineService.stopMachine(sliceToStop.getManagerHostName());
+      sshTunnelService.removeTunnelForSlice(sliceToStop.getId());
     }
   }
 
@@ -113,6 +128,7 @@ public class DefaultSliceService implements SliceService {
 
     if (machineEnv.isPresent()) {
       reinitSwarm(sliceToStart, machineEnv.get());
+      sshTunnelService.createTunnelForSlice(sliceToStart);
 
     } else {
       dockerMachineService.stopMachine(sliceToStart.getManagerHostName());
@@ -125,6 +141,7 @@ public class DefaultSliceService implements SliceService {
     Slice sliceToRemove = getSliceFromRepository(id);
 
     dockerMachineService.removeMachine(sliceToRemove.getManagerHostName());
+    sshTunnelService.removeTunnelForSlice(sliceToRemove.getId());
     sliceRepository.delete(sliceToRemove);
   }
 
@@ -160,8 +177,15 @@ public class DefaultSliceService implements SliceService {
       slice = new Slice();
     }
 
-    createDockerEnvironmentForSlice(machineName, sliceForm);
-    return sliceRepository.save(populateSliceEntity(slice, machineName, sliceForm)).getId();
+    String externalPort = getAvailableExternalPort();
+    createEnvironmentForSlice(machineName, externalPort, sliceForm);
+
+    Slice savedSlice =
+        sliceRepository.save(populateSliceEntity(slice, machineName, sliceForm, externalPort));
+
+    sshTunnelService.createTunnelForSlice(savedSlice);
+
+    return savedSlice.getId();
   }
 
   @Override
@@ -241,34 +265,27 @@ public class DefaultSliceService implements SliceService {
             SERVER_APP_ADDRESS_VARIABLE, slice.getServerApplication().getIpAddress()));
   }
 
-  private void createDockerEnvironmentForSlice(String machineName, NewSliceForm sliceForm) {
+  private void createEnvironmentForSlice(
+      String machineName, String externalPort, NewSliceForm sliceForm) {
 
     dockerMachineService.createNewMachine(machineName);
-    dockerMachineService.stopMachine(machineName);
-    virtualboxService.createBridgedAdapterToInterfaceForMachine(
-        machineName, physicalInternetInterface);
-    dockerMachineService.restartMachine(machineName);
 
-    String externalIpAddress = dockerMachineService.getExternalIpAddress(machineName);
+    Optional<DockerMachineEnv> machineEnvironmentOptional = getMachineEnvironment(machineName);
+    if (machineEnvironmentOptional.isPresent()) {
 
-    Optional<DockerMachineEnv> machineEnvironment = getMachineEnvironment(machineName);
-    if (machineEnvironment.isPresent()) {
-      dockerIntegrationService.initSwarm(machineEnvironment.get(), externalIpAddress);
+      DockerMachineEnv machineEnv = machineEnvironmentOptional.get();
 
-      dockerIntegrationService.createOverlayNetwork(
-          machineEnvironment.get(), SUBNET, OVERLAY_NETWORK_ALIAS);
+      dockerIntegrationService.initSwarm(machineEnv, physicalHostIpAddress, externalPort);
+      dockerIntegrationService.createOverlayNetwork(machineEnv, SUBNET, OVERLAY_NETWORK_ALIAS);
 
       createClientService(
-          sliceForm.getClientAppImageId(),
-          sliceForm.getClientAppPublishedPort(),
-          machineEnvironment.get());
+          sliceForm.getClientAppImageId(), sliceForm.getClientAppPublishedPort(), machineEnv);
 
       createServerService(
           sliceForm.getServerAppImageId(),
           sliceForm.getServerAppPublishedPort(),
           sliceForm.getServerAppCommand(),
-          machineEnvironment.get(),
-          machineName);
+          machineEnv);
 
       return;
     }
@@ -293,15 +310,16 @@ public class DefaultSliceService implements SliceService {
         serverApplication.getImage(),
         serverApplication.getPublishedPort(),
         serverApplication.getCommand(),
-        machineEnv,
-        slice.getManagerHostName());
+        machineEnv);
   }
 
-  private Slice populateSliceEntity(Slice slice, String machineName, NewSliceForm sliceForm) {
+  private Slice populateSliceEntity(
+      Slice slice, String machineName, NewSliceForm sliceForm, String externalPort) {
 
     slice.setManagerHostName(machineName);
     slice.setName(sliceForm.getName());
     slice.setDescription(sliceForm.getDescription());
+    slice.setExternalPort(Integer.valueOf(externalPort));
 
     Application serverApp = new Application();
     serverApp.setImage(sliceForm.getServerAppImageId());
@@ -346,6 +364,7 @@ public class DefaultSliceService implements SliceService {
       String clientAppImageId,
       Integer clientAppPublishedPort,
       DockerMachineEnv machineEnvironment) {
+
     ServiceDockerSpec clientAppSpec =
         ServiceDockerSpec.builder()
             .image(clientAppImageId)
@@ -363,8 +382,8 @@ public class DefaultSliceService implements SliceService {
       String serverAppImageId,
       Integer serverAppPublishedPort,
       String command,
-      DockerMachineEnv machineEnvironment,
-      String machineName) {
+      DockerMachineEnv machineEnvironment) {
+
     ServiceDockerSpec serverAppSpec =
         ServiceDockerSpec.builder()
             .image(serverAppImageId)
@@ -373,13 +392,30 @@ public class DefaultSliceService implements SliceService {
             .restartOnFailure()
             .attachNetwork(OVERLAY_NETWORK_ALIAS)
             .name(SERVER_APP_SERVICE_ID)
-            .command(
-                command,
-                Collections.singletonMap(
-                    SERVER_APP_ADDRESS_VARIABLE,
-                    dockerMachineService.getExternalIpAddress(machineName)))
+            .command(command, Collections.emptyMap())
             .build();
 
     dockerIntegrationService.createSliceService(machineEnvironment, serverAppSpec);
+  }
+
+  private String getAvailableExternalPort() {
+
+    int selectedPort;
+
+    List<Slice> slices = IteratorUtils.toList(sliceRepository.findAll().iterator());
+
+    if (slices.size() != MAX_SLICES) {
+      do {
+        selectedPort = RandomUtils.nextInt(PORT_RANGE) + MIN_EXTERNAL_PORT;
+      } while (!isFreePort(slices, selectedPort));
+
+      return String.valueOf(selectedPort);
+    } else {
+      throw new IllegalStateException("No free ports in available range");
+    }
+  }
+
+  private boolean isFreePort(List<Slice> slices, int selectedPort) {
+    return slices.stream().noneMatch(slice -> slice.getExternalPort() == selectedPort);
   }
 }

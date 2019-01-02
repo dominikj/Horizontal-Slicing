@@ -13,7 +13,7 @@ public class SliceDetailsDto {
   private boolean working;
   private String managerHostName;
   private String managerHostAddressInternal;
-  private String managerHostAddressExternal;
+  private Integer managerHostExternalPort;
   private String serviceName;
 
   private ApplicationDto clientApplication;

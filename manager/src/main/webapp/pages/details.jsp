@@ -96,10 +96,11 @@
                                             <dd>${slice.description}</dd>
                                             <dt>Manager host name</dt>
                                             <dd>${slice.managerHostName}</dd>
-                                            <dt>Manager host address</dt>
-                                            <dd>${slice.managerHostAddressInternal} (internal) <br/>
-                                                ${slice.managerHostAddressExternal} (external)
-                                            </dd>
+                                            <dt>Manager host internal address</dt>
+                                            <dd>${slice.managerHostAddressInternal}</dd>
+                                            <dt>Manager host external port</dt>
+                                            <dd>${slice.managerHostExternalPort}</dd>
+
                                             <dt>Join token</dt>
                                             <dd>${slice.joinToken}</dd>
                                         </dl>

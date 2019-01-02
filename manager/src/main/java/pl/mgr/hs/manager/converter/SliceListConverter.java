@@ -2,6 +2,7 @@ package pl.mgr.hs.manager.converter;
 
 import com.spotify.docker.client.messages.swarm.Node;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import pl.mgr.hs.docker.util.enums.DockerMachineStatus;
 import pl.mgr.hs.docker.util.service.DockerMachineEnv;
@@ -15,8 +16,6 @@ import pl.mgr.hs.manager.entity.Slice;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static pl.mgr.hs.docker.util.constant.Constants.DEFAULT_SWARM_PORT;
-
 /** Created by dominik on 20.10.18. */
 @Component
 public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
@@ -24,6 +23,9 @@ public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
   private static final String READY_STATUS = "ready";
   private final DockerMachineService dockerMachineService;
   private final DockerIntegrationService dockerIntegrationService;
+
+  @Value("${local.host.ip.address}")
+  private String physicalHostIpAddress;
 
   @Autowired
   public SliceListConverter(
@@ -47,7 +49,7 @@ public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
       DockerMachineEnv machineEnv = dockerMachineService.getMachineEnv(entity.getManagerHostName());
 
       dto.setActiveHosts(getNumberOfActiveHosts(machineEnv));
-      dto.setIpAddress(dockerMachineService.getExternalIpAddress(entity.getManagerHostName()));
+      dto.setIpAddress(machineEnv.getAddress().getHost());
     }
 
     return dto;
@@ -65,8 +67,8 @@ public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
     JoinTokenDto dto = new JoinTokenDto();
 
     dto.setToken(getJoinToken(dockerMachineService.getMachineEnv(slice.getManagerHostName())));
-    dto.setPort(DEFAULT_SWARM_PORT);
-    dto.setIpAddress(dockerMachineService.getExternalIpAddress(slice.getManagerHostName()));
+    dto.setPort(slice.getExternalPort());
+    dto.setIpAddress(physicalHostIpAddress);
     return dto;
   }
 

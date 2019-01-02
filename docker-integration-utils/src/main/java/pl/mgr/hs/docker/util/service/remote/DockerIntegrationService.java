@@ -46,6 +46,8 @@ public interface DockerIntegrationService {
 
   void initSwarm(DockerMachineEnv machineEnv, String advertiseAddress);
 
+  void initSwarm(DockerMachineEnv machineEnv, String advertiseAddress, String advertisePort);
+
   void initSwarm(String advertiseAddress);
 
   void createSliceService(DockerMachineEnv machineEnv, ServiceDockerSpec spec);
