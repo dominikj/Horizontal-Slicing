@@ -21,14 +21,14 @@ public class CommandUtil {
   }
 
   public static String replaceVariablesInCommand(String command, Map<String, String> replacements) {
-    String replacedCommand = "";
+    String replacedCommand = command;
 
     if (StringUtils.isBlank(command)) {
       return replacedCommand;
     }
 
     for (Map.Entry<String, String> replacement : replacements.entrySet()) {
-      replacedCommand = command.replace(replacement.getKey(), replacement.getValue());
+      replacedCommand = replacedCommand.replace(replacement.getKey(), replacement.getValue());
     }
     return replacedCommand;
   }
