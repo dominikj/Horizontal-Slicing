@@ -24,18 +24,15 @@ public class DefaultSSHService extends CliExecutorService implements SSHService 
               ex);
         };
 
-    Thread thread =
-        executeCommandAsync(
-            String.format(
-                SSH_REMOTE_TUNNEL_COMMAND_NOOP_BACKGROUND_FLAGS,
-                externalPort,
-                machineIpAddress,
-                machinePort,
-                localUserName),
-            this::createResultForCreateTunnel,
-            handler);
-
-    return thread;
+    return executeCommandAsync(
+        String.format(
+            SSH_REMOTE_TUNNEL_COMMAND_NOOP_BACKGROUND_FLAGS,
+            externalPort,
+            machineIpAddress,
+            machinePort,
+            localUserName),
+        this::createResultForCreateTunnel,
+        handler);
   }
 
   private Result createResultForCreateTunnel(List<String> commandOutput) {
