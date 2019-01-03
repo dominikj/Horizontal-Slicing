@@ -30,6 +30,7 @@ import pl.mgr.hs.manager.entity.Slice;
 import pl.mgr.hs.manager.form.NewSliceForm;
 import pl.mgr.hs.manager.repository.SliceRepository;
 import pl.mgr.hs.manager.service.tunnel.SSHTunnelService;
+import pl.mgr.hs.manager.util.ThreadUtil;
 
 import javax.annotation.PostConstruct;
 import java.util.Collections;
@@ -55,6 +56,10 @@ public class DefaultSliceService implements SliceService {
   private static final int PORT_RANGE = 100;
   private static final int MIN_EXTERNAL_PORT = 9000;
   private static final int MAX_SLICES = 100;
+  private static final int WAIT_UNIT = 5000; // 5 seconds
+  private static final int SLICE_CREATE_TIMEOUT = 120000; // 2 minutes;
+  private static final int WAIT_ATTEMPS = SLICE_CREATE_TIMEOUT / WAIT_UNIT; // 2 minutes;
+
   private final SliceRepository sliceRepository;
   private final SliceListConverter sliceListConverter;
   private final GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter;
@@ -291,6 +296,25 @@ public class DefaultSliceService implements SliceService {
     }
 
     throw new RuntimeException("Cannot create slice");
+  }
+
+  private void waitForServiceOnServer(DockerMachineEnv env) {
+    int attemp = 0;
+
+    do {
+
+      ThreadUtil.sleep(WAIT_UNIT);
+
+      if (!dockerIntegrationService.getServices(env).isEmpty()) {
+        break;
+      }
+      ++attemp;
+
+    } while (attemp <= WAIT_ATTEMPS);
+
+    if (attemp > WAIT_ATTEMPS) {
+      throw new RuntimeException("Timeout during service creating");
+    }
   }
 
   private void reinitSwarm(Slice slice, DockerMachineEnv machineEnv) {
