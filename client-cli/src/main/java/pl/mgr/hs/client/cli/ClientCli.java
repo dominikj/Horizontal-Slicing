@@ -20,7 +20,7 @@ public class ClientCli {
   private static final int ADDRESS_ARG = 0;
   private static final int SLICE_NAME_PARAM = 1;
   private static final String COMMAND_PROMPT = ">";
-  private static Scanner scanner = new Scanner(System.in);
+  private static Scanner scanner = new Scanner(System.in, "UTF-8");
 
   public static void main(String[] args) {
 

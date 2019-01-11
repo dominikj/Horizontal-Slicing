@@ -6,7 +6,7 @@ import pl.mgr.hs.client.cli.rest.data.slice.SliceListResponse;
 /** Created by dominik on 18.11.18. */
 public class MenuService {
 
-  private static final String LIST_FORMAT = "%-30.30s %-60.60s \n";
+  private static final String LIST_FORMAT = "%-30.30s %-60.60s %n";
 
   public void showUsage() {
     System.out.println(
