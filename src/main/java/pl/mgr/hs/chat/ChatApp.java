@@ -46,6 +46,9 @@ public class ChatApp {
           showHelp();
         }
     }
+
+    // For faster closing application send SIGINT signal - ugly
+    System.exit(0);
   }
 
   private static void showHelp() {
