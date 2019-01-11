@@ -57,7 +57,7 @@ public class ChatApp {
 
   private static String getNick() {
     System.out.println("Nick:");
-    Scanner scanner = new Scanner(System.in);
+    Scanner scanner = new Scanner(System.in, "UTF-8");
     return scanner.nextLine();
   }
 }
