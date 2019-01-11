@@ -57,9 +57,9 @@ public class SliceService {
 
       Optional<Container> container = integrationService.getContainerForLabel(CLIENT_APP_ID);
 
-      if (container.isPresent()) {
-        cliService.startContainerInteractive(container.get().id(), attachCommand);
-      }
+      container.ifPresent(
+          container1 -> cliService.startContainerInteractive(container1.id(), attachCommand));
+
       return;
     }
     System.out.println("Cannot attach to application");

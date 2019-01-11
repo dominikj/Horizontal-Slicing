@@ -11,7 +11,6 @@ import java.util.Scanner;
 public class ClientCli {
 
   private static final String LIST_OPTION = "list";
-  private static final String HOST_ADDRESS_FORMAT = "^\\d+.\\d+.\\d+.\\d+:\\d+$";
   private static final int COMMAND_INDEX = 0;
   private static final String CONNECT_OPTION = "connect";
   private static final String DISCONNECT_OPTION = "disconnect";
@@ -27,7 +26,7 @@ public class ClientCli {
 
     MenuService menu = new MenuService();
 
-    if (args.length != 1 || !addressSyntaxIsCorrect(args[ADDRESS_ARG])) {
+    if (args.length != 1) {
       menu.showCommand();
       return;
     }
@@ -98,12 +97,6 @@ public class ClientCli {
       e.printStackTrace();
     }
     return null;
-  }
-
-  private static boolean addressSyntaxIsCorrect(String address) {
-
-    String hostUrl = address.replace("localhost", "127.0.0.1");
-    return hostUrl.matches(HOST_ADDRESS_FORMAT);
   }
 
   private static String[] getInput() {
