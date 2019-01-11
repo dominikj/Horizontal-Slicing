@@ -39,6 +39,8 @@ public class ChatApp {
             nick = args[NICK];
           }
           ChatClient.createClient(args[IP_PORT], nick);
+          // For faster closing application send SIGINT signal - ugly
+          System.exit(0);
           break;
         }
       default:
@@ -46,9 +48,6 @@ public class ChatApp {
           showHelp();
         }
     }
-
-    // For faster closing application send SIGINT signal - ugly
-    System.exit(0);
   }
 
   private static void showHelp() {
