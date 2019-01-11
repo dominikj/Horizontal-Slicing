@@ -49,6 +49,7 @@ public class DefaultSliceService implements SliceService {
   private static final String SH_COMMAND = "/bin/sh";
   private static final String SERVER_APP_ADDRESS_VARIABLE = "${SERVER_APP_ADDRESS}";
   private static final String OVERLAY_NETWORK_ALIAS = "overlay";
+  private static final String HTTP_PROTOCOL = "http://";
   private final SliceRepository sliceRepository;
   private final SliceListConverter sliceListConverter;
   private final GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter;
@@ -58,6 +59,9 @@ public class DefaultSliceService implements SliceService {
 
   @Value("${slice.interface.physical.internet}")
   private String physicalInternetInterface;
+
+  @Value(("${slice.machine.registry.mirror.url}"))
+  private String registryMirrorUrl;
 
   @Autowired
   public DefaultSliceService(
@@ -243,7 +247,8 @@ public class DefaultSliceService implements SliceService {
 
   private void createDockerEnvironmentForSlice(String machineName, NewSliceForm sliceForm) {
 
-    dockerMachineService.createNewMachine(machineName);
+    createMachine(machineName);
+
     dockerMachineService.stopMachine(machineName);
     virtualboxService.createBridgedAdapterToInterfaceForMachine(
         machineName, physicalInternetInterface);
@@ -264,7 +269,7 @@ public class DefaultSliceService implements SliceService {
           machineEnvironment.get());
 
       createServerService(
-          sliceForm.getServerAppImageId(),
+          getImageId(sliceForm.getServerAppImageId(), sliceForm.isUseLocalRegistryForServerImage()),
           sliceForm.getServerAppPublishedPort(),
           sliceForm.getServerAppCommand(),
           machineEnvironment.get(),
@@ -274,6 +279,21 @@ public class DefaultSliceService implements SliceService {
     }
 
     throw new RuntimeException("Cannot create slice");
+  }
+
+  private void createMachine(String machineName) {
+    if (StringUtils.isBlank(registryMirrorUrl)) {
+      dockerMachineService.createNewMachine(machineName);
+    } else {
+      String fullRegistryMirrorUrl = HTTP_PROTOCOL + registryMirrorUrl;
+
+      dockerMachineService.createNewMachine(
+          machineName, fullRegistryMirrorUrl, fullRegistryMirrorUrl);
+    }
+  }
+
+  private String getImageId(String imageId, boolean useLocalRegistry) {
+    return useLocalRegistry ? registryMirrorUrl + "/" + imageId : imageId;
   }
 
   private void reinitSwarm(Slice slice, DockerMachineEnv machineEnv) {
@@ -307,6 +327,7 @@ public class DefaultSliceService implements SliceService {
     serverApp.setImage(sliceForm.getServerAppImageId());
     serverApp.setPublishedPort(sliceForm.getServerAppPublishedPort());
     serverApp.setCommand(sliceForm.getServerAppCommand());
+    serverApp.setUseLocalRegistry(sliceForm.isUseLocalRegistryForServerImage());
     slice.setServerApplication(serverApp);
 
     Application clientApp = new Application();

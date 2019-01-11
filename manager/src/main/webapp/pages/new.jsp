@@ -103,6 +103,9 @@
                                         </div>
                                         <div class="panel-body">
                                             <inputs:text label="Docker image" bindPath="serverAppImageId"/>
+                                            <div class="form-group">
+                                                <form:checkbox path="useLocalRegistryForServerImage" label="Use local registry"/>
+                                            </div>
                                             <inputs:text label="Port" bindPath="serverAppPublishedPort"/>
                                             <inputs:text label="Command" bindPath="serverAppCommand"/>
                                         </div>

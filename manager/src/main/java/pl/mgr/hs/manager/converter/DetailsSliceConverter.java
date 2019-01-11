@@ -126,6 +126,7 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
                             "No service %s on machine: %s", serviceId, env.getAddress())));
 
     app.setImage(service.spec().taskTemplate().containerSpec().image());
+    app.setUseLocalRegistry(entity.getUseLocalRegistry());
 
     List<Integer> publishedPorts =
         service
@@ -158,6 +159,7 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
   private SliceDetailsDto convertFromStaticConfiguration(Slice slice, SliceDetailsDto dto) {
     ApplicationDto serverApplication = new ApplicationDto();
     serverApplication.setImage(slice.getServerApplication().getImage());
+    serverApplication.setUseLocalRegistry(slice.getServerApplication().getUseLocalRegistry());
     serverApplication.setPublishedPorts(
         Collections.singletonList(slice.getServerApplication().getPublishedPort()));
 

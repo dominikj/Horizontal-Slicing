@@ -18,6 +18,10 @@ public interface DockerMachineService {
 
   void createNewMachine(String name);
 
+  void createNewMachine(String name, String mirrorAddress);
+
+  void createNewMachine(String name, String mirrorAddress, String insecureRegistryAddress);
+
   void stopMachine(String name);
 
   String getExternalIpAddress(String name);

@@ -36,6 +36,8 @@ public class NewSliceForm {
 
   private int id;
 
+  private boolean useLocalRegistryForServerImage;
+
   @AssertFalse
   boolean isSliceNameNotContainsWhitespaces() {
     return CharMatcher.whitespace().matchesAnyOf(name);

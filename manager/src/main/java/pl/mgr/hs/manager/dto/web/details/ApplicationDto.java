@@ -11,4 +11,5 @@ public class ApplicationDto {
   private List<Integer> publishedPorts;
   private String command;
   private String ipAddress;
+  private Boolean useLocalRegistry;
 }

@@ -14,4 +14,5 @@ public class Application {
   private String image;
   private Integer publishedPort;
   private String command;
+  private Boolean useLocalRegistry;
 }

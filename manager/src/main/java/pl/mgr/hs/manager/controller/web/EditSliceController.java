@@ -70,7 +70,7 @@ public class EditSliceController {
     sliceForm.setId(slice.getId());
     sliceForm.setDescription(slice.getDescription());
 
-    sliceForm.setClientAppImageId(slice.getClientApplication().getImage().split(":")[0]);
+    sliceForm.setClientAppImageId(slice.getClientApplication().getImage().split("@")[0]);
     sliceForm.setClientAppCommand(slice.getClientApplication().getCommand());
 
     List<Integer> clientPublishedPorts = slice.getClientApplication().getPublishedPorts();
@@ -78,8 +78,13 @@ public class EditSliceController {
       sliceForm.setClientAppPublishedPort(clientPublishedPorts.get(FIRST_PORT));
     }
 
-    sliceForm.setServerAppImageId(slice.getServerApplication().getImage().split(":")[0]);
+    String splittedServerAppImageId = slice.getServerApplication().getImage().split("@")[0];
+    if (slice.getServerApplication().getUseLocalRegistry() && slice.isWorking()) {
+      splittedServerAppImageId = splittedServerAppImageId.split("/")[1];
+    }
+    sliceForm.setServerAppImageId(splittedServerAppImageId);
     sliceForm.setServerAppCommand(slice.getServerApplication().getCommand());
+    sliceForm.setUseLocalRegistryForServerImage(slice.getServerApplication().getUseLocalRegistry());
 
     List<Integer> servPublishedPorts = slice.getServerApplication().getPublishedPorts();
     if (!servPublishedPorts.isEmpty()) {

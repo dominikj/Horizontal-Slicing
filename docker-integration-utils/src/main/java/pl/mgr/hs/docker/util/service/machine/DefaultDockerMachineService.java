@@ -23,7 +23,9 @@ public class DefaultDockerMachineService extends CliExecutorService
   private static final String REGENERATE_CERTS_COMMAND = "docker-machine regenerate-certs -f %s";
   private static final String GET_EXTERNAL_IP_COMMAND = "docker-machine ssh %s ifconfig eth2";
   private static final String CREATE_MACHINE_COMMAND =
-      "docker-machine create -d virtualbox --virtualbox-boot2docker-url %s %s";
+      "docker-machine create -d virtualbox %s %s --virtualbox-boot2docker-url %s %s";
+  private static final String REGISTRY_MIRROR_OPTION = "--engine-registry-mirror %s";
+  private static final String INSECURE_REGISTRY_OPTION = "--engine-insecure-registry %s";
   private static final String GET_ENV_COMMAND = "docker-machine env %s";
   private static final int STATUS_INDEX = 3;
   private static final String WHITESPACES_GROUP = "\\s+";
@@ -116,13 +118,41 @@ public class DefaultDockerMachineService extends CliExecutorService
 
   @Override
   public void createNewMachine(String name) {
-    Result result =
-        executeCommand(
-            String.format(CREATE_MACHINE_COMMAND, boot2DockerImageUrl, name),
-            this::createResultForCreateMachine);
+    createMachineInternal(
+        String.format(CREATE_MACHINE_COMMAND, null, null, boot2DockerImageUrl, name), name);
+  }
+
+  @Override
+  public void createNewMachine(String name, String registryMirrorAddress) {
+    String registryMirrorOption = String.format(REGISTRY_MIRROR_OPTION, registryMirrorAddress);
+
+    createMachineInternal(
+        String.format(
+            CREATE_MACHINE_COMMAND, null, registryMirrorOption, boot2DockerImageUrl, name),
+        name);
+  }
+
+  @Override
+  public void createNewMachine(String name, String mirrorAddress, String insecureRegistryAddress) {
+    String registryMirrorOption = String.format(REGISTRY_MIRROR_OPTION, mirrorAddress);
+    String insecureRegistryOption =
+        String.format(INSECURE_REGISTRY_OPTION, insecureRegistryAddress);
+
+    createMachineInternal(
+        String.format(
+            CREATE_MACHINE_COMMAND,
+            insecureRegistryOption,
+            registryMirrorOption,
+            boot2DockerImageUrl,
+            name),
+        name);
+  }
+
+  private void createMachineInternal(String createCommand, String machineName) {
+    Result result = executeCommand(createCommand, this::createResultForCreateMachine);
 
     if (result.isFailure()) {
-      throw new DockerOperationException(String.format("Cannot create machine: %s", name));
+      throw new DockerOperationException(String.format("Cannot create machine %s", machineName));
     }
   }
 

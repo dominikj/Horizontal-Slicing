@@ -65,6 +65,7 @@ public abstract class CliExecutorService {
     ByteArrayInputStream inputStream = createInputStream(password);
     PumpStreamHandler streamHandler =
         new PumpStreamHandler(outputStream, outputStream, inputStream);
+    streamHandler.setStopTimeout(1L);
     exec.setStreamHandler(streamHandler);
     execute(exec, commandline);
   }
