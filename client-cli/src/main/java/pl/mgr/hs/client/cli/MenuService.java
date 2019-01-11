@@ -1,5 +1,6 @@
 package pl.mgr.hs.client.cli;
 
+import org.apache.commons.lang.StringUtils;
 import pl.mgr.hs.client.cli.rest.data.slice.SliceListResponse;
 
 /** Created by dominik on 18.11.18. */
@@ -17,14 +18,23 @@ public class MenuService {
             + " exit - exit");
   }
 
-  public void showList(SliceListResponse response) {
+  public void showList(SliceListResponse response, String currentSliceName) {
     System.out.printf(LIST_FORMAT, "NAME", "DESCRIPTION");
 
     response
         .getSlices()
         .forEach(
             sliceData ->
-                System.out.printf(LIST_FORMAT, sliceData.getName(), sliceData.getDescription()));
+                System.out.printf(
+                    LIST_FORMAT,
+                    markCurrentSelectedSlice(currentSliceName, sliceData.getName()),
+                    sliceData.getDescription()));
+  }
+
+  private String markCurrentSelectedSlice(String runningSliceName, String sliceName) {
+    return StringUtils.isNotBlank(runningSliceName) && runningSliceName.equals(sliceName)
+        ? "* " + sliceName
+        : sliceName;
   }
 
   public void showCommand() {

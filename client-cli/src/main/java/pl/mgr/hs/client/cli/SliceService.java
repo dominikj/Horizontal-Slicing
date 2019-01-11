@@ -46,8 +46,7 @@ public class SliceService {
   }
 
   public void disconnectFromSlice() {
-    integrationService.leaveSwarm();
-    System.out.println("Disconnected from slice");
+    leaveSliceInternal(true);
   }
 
   public void attachToSliceApp(String sliceName, String hostId, String hostAddress) {
@@ -74,6 +73,8 @@ public class SliceService {
     }
 
     JoinTokenData tokenData = joinDataResponse.get().getTokenDto();
+
+    leaveSliceInternal(false);
 
     try {
       integrationService.joinSwarm(
@@ -108,6 +109,21 @@ public class SliceService {
         .filter(sliceData -> sliceName.equals(sliceData.getName()))
         .findFirst()
         .map(SliceData::getId);
+  }
+
+  private void leaveSliceInternal(boolean showInformation) {
+    try {
+      integrationService.leaveSwarm();
+    } catch (DockerOperationException ex) {
+      if (showInformation) {
+        System.out.println("Cannot disconnect from slice");
+      }
+      return;
+    }
+
+    if (showInformation) {
+      System.out.println("Disconnected from slice");
+    }
   }
 
   private <T> T request(Class<T> responseMappingClass, String url) {

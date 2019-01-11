@@ -51,7 +51,9 @@ public class ClientCli {
       switch (input[COMMAND_INDEX]) {
         case LIST_OPTION:
           {
-            menu.showList(sliceService.getAvailableSlicesForHost(getHostName(), managerAddress));
+            menu.showList(
+                sliceService.getAvailableSlicesForHost(getHostName(), managerAddress),
+                connectedSlice);
             break;
           }
         case CONNECT_OPTION:
