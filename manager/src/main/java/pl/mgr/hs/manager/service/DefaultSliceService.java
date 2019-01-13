@@ -50,7 +50,6 @@ public class DefaultSliceService implements SliceService {
   private static final String SERVER_APP_ADDRESS_VARIABLE = "${SERVER_APP_ADDRESS}";
   private static final String OVERLAY_NETWORK_ALIAS = "overlay";
   private static final String HTTP_PROTOCOL = "http://";
-  private static final int WAIT_FOR_SWARM_UNIT = 5000;
   private final SliceRepository sliceRepository;
   private final SliceListConverter sliceListConverter;
   private final GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter;
