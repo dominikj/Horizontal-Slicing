@@ -208,10 +208,12 @@
                                 </div>
                                 <div id="collapseFive" class="panel-collapse collapse">
                                     <div class="panel-body">
-                                        <spring:url value="/actions/restart" var="restartUrl">
-                                            <spring:param name="sliceId" value="${slice.id}"/>
-                                        </spring:url>
-                                        <a href="${restartUrl}" class="btn btn-warning">Restart</a>
+                                        <c:if test="${slice.working}">
+                                            <spring:url value="/actions/restart" var="restartUrl">
+                                                <spring:param name="sliceId" value="${slice.id}"/>
+                                            </spring:url>
+                                            <a href="${restartUrl}" class="btn btn-warning">Restart</a>
+                                        </c:if>
                                         <spring:url value="/actions/remove" var="removeUrl">
                                             <spring:param name="sliceId" value="${slice.id}"/>
                                         </spring:url>

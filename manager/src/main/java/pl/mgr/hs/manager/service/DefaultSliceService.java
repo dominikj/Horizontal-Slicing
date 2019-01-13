@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pl.mgr.hs.docker.util.exception.DockerOperationException;
 import pl.mgr.hs.docker.util.service.DockerMachineEnv;
-import pl.mgr.hs.docker.util.service.machine.DockerMachineService;
 import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
 import pl.mgr.hs.docker.util.service.remote.ServiceDockerSpec;
 import pl.mgr.hs.docker.util.service.virtualbox.VirtualboxService;
@@ -28,6 +27,7 @@ import pl.mgr.hs.manager.entity.Application;
 import pl.mgr.hs.manager.entity.Slice;
 import pl.mgr.hs.manager.form.NewSliceForm;
 import pl.mgr.hs.manager.repository.SliceRepository;
+import pl.mgr.hs.manager.util.ThreadUtil;
 
 import java.util.Collections;
 import java.util.List;
@@ -50,12 +50,13 @@ public class DefaultSliceService implements SliceService {
   private static final String SERVER_APP_ADDRESS_VARIABLE = "${SERVER_APP_ADDRESS}";
   private static final String OVERLAY_NETWORK_ALIAS = "overlay";
   private static final String HTTP_PROTOCOL = "http://";
+  private static final int WAIT_FOR_SWARM_UNIT = 5000;
   private final SliceRepository sliceRepository;
   private final SliceListConverter sliceListConverter;
   private final GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter;
   private final DockerIntegrationService dockerIntegrationService;
-  private final DockerMachineService dockerMachineService;
   private final VirtualboxService virtualboxService;
+  private final DockerMachineCacheableService dockerMachineService;
 
   @Value("${slice.interface.physical.internet}")
   private String physicalInternetInterface;
@@ -70,15 +71,15 @@ public class DefaultSliceService implements SliceService {
       @Qualifier("detailsSliceConverter")
           GenericConverter<SliceDetailsDto, Slice> sliceDetailsConverter,
       DockerIntegrationService dockerIntegrationService,
-      DockerMachineService dockerMachineService,
-      VirtualboxService virtualboxService) {
+      VirtualboxService virtualboxService,
+      DockerMachineCacheableService dockerMachineService) {
 
     this.sliceRepository = sliceRepository;
     this.sliceListConverter = sliceListConverter;
     this.sliceDetailsConverter = sliceDetailsConverter;
     this.dockerIntegrationService = dockerIntegrationService;
-    this.dockerMachineService = dockerMachineService;
     this.virtualboxService = virtualboxService;
+    this.dockerMachineService = dockerMachineService;
   }
 
   @Override
@@ -258,6 +259,7 @@ public class DefaultSliceService implements SliceService {
 
     Optional<DockerMachineEnv> machineEnvironment = getMachineEnvironment(machineName);
     if (machineEnvironment.isPresent()) {
+
       dockerIntegrationService.initSwarm(machineEnvironment.get(), externalIpAddress);
 
       dockerIntegrationService.createOverlayNetwork(
@@ -301,6 +303,8 @@ public class DefaultSliceService implements SliceService {
     dockerIntegrationService.leaveSwarm(machineEnv);
     dockerIntegrationService.initSwarm(
         machineEnv, dockerMachineService.getExternalIpAddress(slice.getManagerHostName()));
+
+    dockerIntegrationService.createOverlayNetwork(machineEnv, SUBNET, OVERLAY_NETWORK_ALIAS);
 
     Application clientApplication = slice.getClientApplication();
 
@@ -367,6 +371,7 @@ public class DefaultSliceService implements SliceService {
       String clientAppImageId,
       Integer clientAppPublishedPort,
       DockerMachineEnv machineEnvironment) {
+
     ServiceDockerSpec clientAppSpec =
         ServiceDockerSpec.builder()
             .image(clientAppImageId)
@@ -386,6 +391,7 @@ public class DefaultSliceService implements SliceService {
       String command,
       DockerMachineEnv machineEnvironment,
       String machineName) {
+
     ServiceDockerSpec serverAppSpec =
         ServiceDockerSpec.builder()
             .image(serverAppImageId)

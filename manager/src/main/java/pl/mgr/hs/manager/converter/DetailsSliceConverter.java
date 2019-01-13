@@ -7,13 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pl.mgr.hs.docker.util.enums.DockerMachineStatus;
 import pl.mgr.hs.docker.util.service.DockerMachineEnv;
-import pl.mgr.hs.docker.util.service.machine.DockerMachineService;
 import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
 import pl.mgr.hs.manager.dto.web.details.ApplicationDto;
 import pl.mgr.hs.manager.dto.web.details.HostDto;
 import pl.mgr.hs.manager.dto.web.details.SliceDetailsDto;
 import pl.mgr.hs.manager.entity.Application;
 import pl.mgr.hs.manager.entity.Slice;
+import pl.mgr.hs.manager.service.DockerMachineCacheableService;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,12 +30,12 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
 
   private static final String SHUTDOWN_DESIRED_STATE = "shutdown";
   private static final int IP_ADDRESS = 0;
-  private final DockerMachineService dockerMachineService;
+  private final DockerMachineCacheableService dockerMachineService;
   private final DockerIntegrationService dockerIntegrationService;
 
   @Autowired
   public DetailsSliceConverter(
-      DockerMachineService dockerMachineService,
+      DockerMachineCacheableService dockerMachineService,
       DockerIntegrationService dockerIntegrationService) {
     this.dockerMachineService = dockerMachineService;
     this.dockerIntegrationService = dockerIntegrationService;
@@ -159,12 +159,14 @@ public class DetailsSliceConverter extends SliceConverter<SliceDetailsDto, Slice
   private SliceDetailsDto convertFromStaticConfiguration(Slice slice, SliceDetailsDto dto) {
     ApplicationDto serverApplication = new ApplicationDto();
     serverApplication.setImage(slice.getServerApplication().getImage());
+    serverApplication.setCommand(slice.getServerApplication().getCommand());
     serverApplication.setUseLocalRegistry(slice.getServerApplication().getUseLocalRegistry());
     serverApplication.setPublishedPorts(
         Collections.singletonList(slice.getServerApplication().getPublishedPort()));
 
     ApplicationDto clientApplication = new ApplicationDto();
     clientApplication.setImage(slice.getClientApplication().getImage());
+    clientApplication.setCommand(slice.getClientApplication().getCommand());
     clientApplication.setPublishedPorts(
         Collections.singletonList(slice.getClientApplication().getPublishedPort()));
 

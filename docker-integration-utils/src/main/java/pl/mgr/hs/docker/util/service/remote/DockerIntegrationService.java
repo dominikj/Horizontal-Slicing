@@ -69,4 +69,6 @@ public interface DockerIntegrationService {
   void createOverlayNetwork(DockerMachineEnv machineEnv, String subnet, String networkName);
 
   Optional<Container> getContainerForLabel(String containerName);
+
+  boolean isSwarmRunning(DockerMachineEnv machineEnv);
 }

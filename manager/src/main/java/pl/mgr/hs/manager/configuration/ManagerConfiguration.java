@@ -1,6 +1,7 @@
 package pl.mgr.hs.manager.configuration;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
@@ -26,6 +27,7 @@ import pl.mgr.hs.manager.interceptor.VersionInterceptor;
 @Configuration
 @EnableScheduling
 @EnableWebSecurity
+@EnableCaching
 @PropertySource("classpath:pass.properties")
 public class ManagerConfiguration extends WebSecurityConfigurerAdapter
     implements WebMvcConfigurer, SchedulingConfigurer {

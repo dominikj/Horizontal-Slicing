@@ -79,10 +79,8 @@
                                         <td class="center">${slice.ipAddress}</td>
                                         <td class="center">${slice.activeHosts}</td>
                                         <td class="center">
-                                            <c:if test="${slice.working}">
                                                 <a href="/details/${slice.id}" class="btn btn-default">Details</a>
                                                 <a href="/edit/${slice.id}" class="btn btn-default">Edit</a>
-                                            </c:if>
                                         </td>
                                     </tr>
                                 </c:forEach>

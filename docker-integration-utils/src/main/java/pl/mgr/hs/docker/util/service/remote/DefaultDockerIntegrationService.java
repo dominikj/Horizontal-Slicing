@@ -347,6 +347,17 @@ public class DefaultDockerIntegrationService implements DockerIntegrationService
   }
 
   @Override
+  public boolean isSwarmRunning(DockerMachineEnv machineEnv) {
+    try (DefaultDockerClient docker = createDockerConnection(null)) {
+
+      return docker.info().swarm().controlAvailable();
+
+    } catch (DockerException | InterruptedException e) {
+      throw new DockerOperationException("Cannot get swarm info");
+    }
+  }
+
+  @Override
   public void createOverlayNetwork(DockerMachineEnv machineEnv, String subnet, String networkName) {
     try (DefaultDockerClient docker = createDockerConnection(machineEnv)) {
 

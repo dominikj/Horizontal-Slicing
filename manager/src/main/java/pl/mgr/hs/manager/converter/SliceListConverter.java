@@ -5,12 +5,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pl.mgr.hs.docker.util.enums.DockerMachineStatus;
 import pl.mgr.hs.docker.util.service.DockerMachineEnv;
-import pl.mgr.hs.docker.util.service.machine.DockerMachineService;
 import pl.mgr.hs.docker.util.service.remote.DockerIntegrationService;
 import pl.mgr.hs.manager.dto.rest.JoinTokenDto;
 import pl.mgr.hs.manager.dto.rest.SliceDto;
 import pl.mgr.hs.manager.dto.web.SliceListDto;
 import pl.mgr.hs.manager.entity.Slice;
+import pl.mgr.hs.manager.service.DockerMachineCacheableService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,12 +22,12 @@ import static pl.mgr.hs.docker.util.constant.Constants.DEFAULT_SWARM_PORT;
 public class SliceListConverter extends SliceConverter<SliceListDto, Slice> {
 
   private static final String READY_STATUS = "ready";
-  private final DockerMachineService dockerMachineService;
+  private final DockerMachineCacheableService dockerMachineService;
   private final DockerIntegrationService dockerIntegrationService;
 
   @Autowired
   public SliceListConverter(
-      DockerMachineService dockerMachineService,
+      DockerMachineCacheableService dockerMachineService,
       DockerIntegrationService dockerIntegrationService) {
     this.dockerMachineService = dockerMachineService;
     this.dockerIntegrationService = dockerIntegrationService;
